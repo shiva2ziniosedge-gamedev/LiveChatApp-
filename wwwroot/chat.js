@@ -80,3 +80,50 @@ document.getElementById("messageInput").addEventListener("keypress", function (e
         document.getElementById("sendButton").click();
     }
 });
+// Handle image button click
+document.getElementById("imageButton").addEventListener("click", function () {
+    document.getElementById("imageInput").click();
+});
+
+// Handle image selection
+document.getElementById("imageInput").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    const user = document.getElementById("userInput").value;
+    
+    if (!user) {
+        alert("Please enter your name first!");
+        return;
+    }
+    
+    if (file && file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        
+        reader.onload = function (event) {
+            const imageData = event.target.result;
+            connection.invoke("SendImage", user, imageData, file.name).catch(function (err) {
+                return console.error(err.toString());
+            });
+        };
+        
+        reader.readAsDataURL(file);
+        e.target.value = ""; // Clear input
+    }
+});
+
+// Listen for incoming images
+connection.on("ReceiveImage", function (user, imageData, fileName, timestamp) {
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "message";
+    messageDiv.innerHTML = `
+        <div class="message-content">
+            <div class="message-user">${user}</div>
+            <img src="${imageData}" alt="${fileName}" style="max-width: 300px; border-radius: 8px; margin: 5px 0;" />
+            <div class="message-time">${timestamp}</div>
+        </div>
+    `;
+    document.getElementById("messagesList").appendChild(messageDiv);
+    
+    // Auto scroll to bottom
+    const messagesList = document.getElementById("messagesList");
+    messagesList.scrollTop = messagesList.scrollHeight;
+});

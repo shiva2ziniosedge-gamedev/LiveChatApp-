@@ -2,8 +2,11 @@ using LiveChatApp.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add SignalR
-builder.Services.AddSignalR();
+// Add SignalR with increased message size for images
+builder.Services.AddSignalR(options =>
+{
+    options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10 MB for images
+});
 
 var app = builder.Build();
 

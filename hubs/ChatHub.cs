@@ -19,5 +19,11 @@ namespace LiveChatApp.Hubs
         {
             await Clients.Others.SendAsync("UserStoppedTyping", user);
         }
+
+        public async Task SendImage(string user, string imageData, string fileName)
+        {
+            var timestamp = DateTime.Now.ToString("HH:mm");
+            await Clients.All.SendAsync("ReceiveImage", user, imageData, fileName, timestamp);
+        }
     }
 }
