@@ -19,11 +19,56 @@
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             width: 90%;
-            max-width: 600px;
+            max-width: 800px;
             height: 80vh;
             max-height: 700px;
             display: flex;
+            flex-direction: row;
+        }
+        .chat-main {
+            flex: 1;
+            display: flex;
             flex-direction: column;
+        }
+        .online-users {
+            width: 200px;
+            background: #f8f9fa;
+            border-left: 1px solid #e0e0e0;
+            border-radius: 0 15px 15px 0;
+            padding: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .online-users-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 0 15px 0 0;
+        }
+        .online-users-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: white;
+        }
+        .online-users-list {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .user-item {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .user-item::before {
+            content: '🟢';
+            margin-right: 8px;
+            font-size: 10px;
         }
         @media (max-width: 768px) {
             .chat-container {
@@ -31,6 +76,10 @@
                 height: 100vh;
                 max-height: 100vh;
                 border-radius: 0;
+                flex-direction: column;
+            }
+            .online-users {
+                display: none;
             }
             body {
                 padding: 0;
@@ -40,7 +89,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
-            border-radius: 15px 15px 0 0;
+            border-radius: 15px 0 0 0;
             text-align: center;
         }
         .chat-header h2 { margin: 0; font-size: 24px; }
@@ -82,7 +131,7 @@
         .chat-input {
             padding: 20px;
             background: white;
-            border-radius: 0 0 15px 15px;
+            border-radius: 0 0 0 15px;
             border-top: 1px solid #eee;
         }
         .input-row {
@@ -145,23 +194,29 @@
 </head>
 <body>
     <div class="chat-container">
-        <div class="chat-header">
-            <h2>Live Chat</h2>
-
+        <div class="chat-main">
+            <div class="chat-header">
+                <h2>Live Chat</h2>
+            </div>
+            <div id="messagesList"></div>
+            <div id="typingIndicator"></div>
+            <div class="chat-input">
+                <div class="input-row">
+                    <input type="text" id="userInput" placeholder="Your name" />
+                </div>
+                <div class="input-row">
+                    <input type="text" id="messageInput" placeholder="Type a message..." />
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;"/>
+                    <button id="imageButton" title="Send Image">📷</button>
+                    <button id="sendButton">Send</button>
+                </div>
+            </div>
         </div>
-    <div id="messagesList"></div>
-<div id="typingIndicator"></div>
-<div class="chat-input">
-
-            <div class="input-row">
-                <input type="text" id="userInput" placeholder="Your name" />
+        <div class="online-users">
+            <div class="online-users-header">
+                <h3>Online Users (<span id="userCount">0</span>)</h3>
             </div>
-            <div class="input-row">
-                <input type="text" id="messageInput" placeholder="Type a message..." />
-                <input type="file" id="imageInput" accept="image/*" style="display: none;"/>
-                <button id="imageButton" title="Send Image">📷</button>
-                <button id="sendButton">Send</button>
-            </div>
+            <div class="online-users-list" id="usersList"></div>
         </div>
     </div>
 

@@ -4,6 +4,63 @@ const connection = new signalR.HubConnectionBuilder()
 
 let typingTimer;
 const typingDelay = 1000; // 1 second
+let currentUser = "";
+
+// Function to update online users list
+function updateUsersList(users) {
+    const usersList = document.getElementById("usersList");
+    const userCount = document.getElementById("userCount");
+    
+    userCount.textContent = users.length;
+    usersList.innerHTML = "";
+    
+    users.forEach(function(user) {
+        const userDiv = document.createElement("div");
+        userDiv.className = "user-item";
+        userDiv.textContent = user;
+        usersList.appendChild(userDiv);
+    });
+}
+
+// User joined
+connection.on("UserJoined", function (username, users) {
+    updateUsersList(users);
+    
+    // Show notification
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "message";
+    messageDiv.innerHTML = `
+        <div class="message-content" style="background: #e8f5e9; text-align: center;">
+            <div class="message-text" style="color: #2e7d32; font-style: italic;">
+                ${username} joined the chat
+            </div>
+        </div>
+    `;
+    document.getElementById("messagesList").appendChild(messageDiv);
+    
+    const messagesList = document.getElementById("messagesList");
+    messagesList.scrollTop = messagesList.scrollHeight;
+});
+
+// User left
+connection.on("UserLeft", function (username, users) {
+    updateUsersList(users);
+    
+    // Show notification
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "message";
+    messageDiv.innerHTML = `
+        <div class="message-content" style="background: #ffebee; text-align: center;">
+            <div class="message-text" style="color: #c62828; font-style: italic;">
+                ${username} left the chat
+            </div>
+        </div>
+    `;
+    document.getElementById("messagesList").appendChild(messageDiv);
+    
+    const messagesList = document.getElementById("messagesList");
+    messagesList.scrollTop = messagesList.scrollHeight;
+});
 
 // Receive messages from server
 connection.on("ReceiveMessage", function (user, message, timestamp) {
@@ -44,6 +101,13 @@ document.getElementById("sendButton").addEventListener("click", function () {
     const message = document.getElementById("messageInput").value;
     
     if (user && message) {
+        // Join chat if first message
+        if (!currentUser) {
+            currentUser = user;
+            connection.invoke("JoinChat", user);
+            document.getElementById("userInput").disabled = true;
+        }
+        
         connection.invoke("SendMessage", user, message).catch(function (err) {
             return console.error(err.toString());
         });
