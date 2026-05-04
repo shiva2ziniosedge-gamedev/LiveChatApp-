@@ -12,6 +12,8 @@ function updateUsersList(users) {
     const mobileUsersList = document.getElementById("mobileUsersList");
     const userCount = document.getElementById("userCount");
     
+    if (!usersList || !mobileUsersList || !userCount) return;
+
     userCount.textContent = users.length;
     usersList.innerHTML = "";
     mobileUsersList.innerHTML = "";
