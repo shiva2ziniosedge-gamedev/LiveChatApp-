@@ -197,8 +197,23 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 14px;
             background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Mobile call button - hidden on desktop, shown on mobile */
+        .btn-mobile-users {
+            display: none;
+            background: rgba(0, 229, 160, 0.2);
+            border: 1px solid rgba(0, 229, 160, 0.4);
+            color: #00e5a0;
+            border-radius: 10px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
         }
 
         .chat-header h2 {
@@ -393,6 +408,9 @@
             /* Hide sidebar on mobile */
             .online-users { display: none; }
 
+            /* Show call button in header on mobile */
+            .btn-mobile-users { display: block; }
+
             /* Compact header */
             .chat-header {
                 padding: 12px 16px;
@@ -475,6 +493,7 @@
                     <h2>Let's Talk 💬</h2>
                     <span id="onlineStatus">Connecting...</span>
                 </div>
+                <button class="btn-mobile-users" id="mobileCallBtn">📞 Users</button>
             </div>
 
             <div id="messagesList"></div>
@@ -516,6 +535,16 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
     <audio id="remoteAudio" autoplay></audio>
+
+    <!-- Mobile users popup -->
+    <div id="mobileUsersOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:200; justify-content:center; align-items:flex-end;">
+        <div style="background:rgba(20,10,40,0.97); border:1px solid rgba(255,255,255,0.15); border-radius:20px 20px 0 0; padding:24px 20px; width:100%; max-height:60vh; overflow-y:auto;">
+            <p style="color:white; font-size:16px; font-weight:700; text-align:center; margin-bottom:16px;">📞 Call Someone</p>
+            <div id="mobileUsersList"></div>
+            <button onclick="document.getElementById('mobileUsersOverlay').style.display='none';" style="width:100%; padding:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); border-radius:10px; cursor:pointer; font-size:14px; margin-top:10px;">Close</button>
+        </div>
+    </div>
+
     <script src="chat.js"></script>
 </body>
 </html>

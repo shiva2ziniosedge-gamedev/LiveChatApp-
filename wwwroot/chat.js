@@ -10,11 +10,14 @@ let currentUser = "";
 function updateUsersList(users) {
     const usersList = document.getElementById("usersList");
     const userCount = document.getElementById("userCount");
+    const mobileUsersList = document.getElementById("mobileUsersList");
     
     userCount.textContent = users.length;
     usersList.innerHTML = "";
+    if (mobileUsersList) mobileUsersList.innerHTML = "";
     
     users.forEach(function(user) {
+        // Desktop sidebar
         const userDiv = document.createElement("div");
         userDiv.className = "user-item";
         userDiv.innerHTML = `
@@ -22,6 +25,17 @@ function updateUsersList(users) {
             ${user !== currentUser ? `<button class="btn-call" onclick="initiateCall('${user}')">📞</button>` : ''}
         `;
         usersList.appendChild(userDiv);
+
+        // Mobile popup list
+        if (mobileUsersList && user !== currentUser) {
+            const mobileDiv = document.createElement("div");
+            mobileDiv.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(255,255,255,0.08); border-radius:10px; margin-bottom:8px; color:rgba(255,255,255,0.9); font-size:15px;";
+            mobileDiv.innerHTML = `
+                <span>${user}</span>
+                <button onclick="initiateCall('${user}'); document.getElementById('mobileUsersOverlay').style.display='none';" style="background:rgba(0,229,160,0.2); border:1px solid rgba(0,229,160,0.3); color:#00e5a0; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:14px;">📞 Call</button>
+            `;
+            mobileUsersList.appendChild(mobileDiv);
+        }
     });
 }
 
@@ -343,4 +357,9 @@ document.getElementById("rejectCallBtn").addEventListener("click", function() {
     if (peerConnection) { peerConnection.close(); peerConnection = null; }
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     callTarget = null;
+});
+
+// Mobile call button - opens users popup
+document.getElementById("mobileCallBtn").addEventListener("click", function() {
+    document.getElementById("mobileUsersOverlay").style.display = "flex";
 });
