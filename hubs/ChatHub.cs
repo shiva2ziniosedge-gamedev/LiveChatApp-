@@ -54,5 +54,68 @@ namespace LiveChatApp.Hubs
             var timestamp = DateTime.Now.ToString("HH:mm");
             await Clients.All.SendAsync("ReceiveImage", user, imageData, fileName, timestamp);
         }
+
+
+
+
+        // ─────────────────────────────────────────────────────────────
+        // VOICE CALL FEATURES - SignalR signaling methods for WebRTC
+        // ─────────────────────────────────────────────────────────────
+
+        // Called when a user initiates a voice call to another user
+        public async Task CallUser(string caller, string target)
+        {
+            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
+            if (!string.IsNullOrEmpty(targetConnection.Key))
+                await Clients.Client(targetConnection.Key).SendAsync("IncomingCall", caller);
+        }
+
+        // Called when the target user accepts the incoming call
+        public async Task AcceptCall(string caller)
+        {
+            var callerConnection = ConnectedUsers.FirstOrDefault(x => x.Value == caller);
+            if (!string.IsNullOrEmpty(callerConnection.Key))
+                await Clients.Client(callerConnection.Key).SendAsync("CallAccepted", ConnectedUsers[Context.ConnectionId]);
+        }
+
+        // Called when the target user rejects the incoming call
+        public async Task RejectCall(string caller)
+        {
+            var callerConnection = ConnectedUsers.FirstOrDefault(x => x.Value == caller);
+            if (!string.IsNullOrEmpty(callerConnection.Key))
+                await Clients.Client(callerConnection.Key).SendAsync("CallRejected");
+        }
+
+        // Called when either user ends the active call
+        public async Task EndCall(string target)
+        {
+            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
+            if (!string.IsNullOrEmpty(targetConnection.Key))
+                await Clients.Client(targetConnection.Key).SendAsync("CallEnded");
+        }
+
+        // WebRTC signaling - exchange SDP offer between peers
+        public async Task SendOffer(string target, string offer)
+        {
+            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
+            if (!string.IsNullOrEmpty(targetConnection.Key))
+                await Clients.Client(targetConnection.Key).SendAsync("ReceiveOffer", offer);
+        }
+
+        // WebRTC signaling - exchange SDP answer between peers
+        public async Task SendAnswer(string target, string answer)
+        {
+            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
+            if (!string.IsNullOrEmpty(targetConnection.Key))
+                await Clients.Client(targetConnection.Key).SendAsync("ReceiveAnswer", answer);
+        }
+
+        // WebRTC signaling - exchange ICE candidates between peers
+        public async Task SendIceCandidate(string target, string candidate)
+        {
+            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
+            if (!string.IsNullOrEmpty(targetConnection.Key))
+                await Clients.Client(targetConnection.Key).SendAsync("ReceiveIceCandidate", candidate);
+        }
     }
 }
