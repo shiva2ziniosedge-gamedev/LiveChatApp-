@@ -26,17 +26,10 @@ function updateUsersList(users) {
 connection.on("UserJoined", function (username, users) {
     updateUsersList(users);
     
-    // Show notification
-    const messageDiv = document.createElement("div");
-    messageDiv.className = "message";
-    messageDiv.innerHTML = `
-        <div class="message-content" style="background: #e8f5e9; text-align: center;">
-            <div class="message-text" style="color: #2e7d32; font-style: italic;">
-                ${username} joined the chat
-            </div>
-        </div>
-    `;
-    document.getElementById("messagesList").appendChild(messageDiv);
+    const div = document.createElement("div");
+    div.className = "notification";
+    div.innerHTML = `<span>${username} joined the chat</span>`;
+    document.getElementById("messagesList").appendChild(div);
     
     const messagesList = document.getElementById("messagesList");
     messagesList.scrollTop = messagesList.scrollHeight;
@@ -46,17 +39,10 @@ connection.on("UserJoined", function (username, users) {
 connection.on("UserLeft", function (username, users) {
     updateUsersList(users);
     
-    // Show notification
-    const messageDiv = document.createElement("div");
-    messageDiv.className = "message";
-    messageDiv.innerHTML = `
-        <div class="message-content" style="background: #ffebee; text-align: center;">
-            <div class="message-text" style="color: #c62828; font-style: italic;">
-                ${username} left the chat
-            </div>
-        </div>
-    `;
-    document.getElementById("messagesList").appendChild(messageDiv);
+    const div = document.createElement("div");
+    div.className = "notification";
+    div.innerHTML = `<span>${username} left the chat</span>`;
+    document.getElementById("messagesList").appendChild(div);
     
     const messagesList = document.getElementById("messagesList");
     messagesList.scrollTop = messagesList.scrollHeight;
@@ -91,9 +77,14 @@ connection.on("UserStoppedTyping", function (user) {
 });
 
 // Start connection
-connection.start().catch(function (err) {
-    return console.error(err.toString());
-});
+connection.start()
+    .then(function() {
+        document.getElementById("onlineStatus").textContent = "Connected";
+    })
+    .catch(function (err) {
+        document.getElementById("onlineStatus").textContent = "Disconnected";
+        return console.error(err.toString());
+    });
 
 // Send message when button clicked
 document.getElementById("sendButton").addEventListener("click", function () {
