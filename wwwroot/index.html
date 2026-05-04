@@ -199,6 +199,81 @@
             align-items: center;
             gap: 14px;
             background: rgba(0, 0, 0, 0.1);
+            justify-content: space-between;
+        }
+
+        .btn-mobile-call {
+            display: none;
+            background: rgba(0, 229, 160, 0.2);
+            border: 1px solid rgba(0, 229, 160, 0.3);
+            color: #00e5a0;
+            border-radius: 10px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            gap: 6px;
+            align-items: center;
+        }
+
+        /* Mobile users popup */
+        .mobile-users-popup {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 99;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .mobile-users-popup.active { display: flex; }
+
+        .mobile-users-box {
+            background: rgba(30, 20, 60, 0.97);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px 20px 0 0;
+            padding: 24px 20px;
+            width: 100%;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .mobile-users-box h3 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .mobile-user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            color: rgba(255,255,255,0.9);
+            font-size: 15px;
+        }
+
+        .mobile-user-item .btn-call {
+            padding: 6px 14px;
+            font-size: 14px;
+        }
+
+        .btn-close-popup {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
         }
 
         .chat-header h2 {
@@ -393,6 +468,9 @@
             /* Hide sidebar on mobile */
             .online-users { display: none; }
 
+            /* Show call button in header on mobile */
+            .btn-mobile-call { display: flex; }
+
             /* Compact header */
             .chat-header {
                 padding: 12px 16px;
@@ -475,6 +553,9 @@
                     <h2>Let's Talk 💬</h2>
                     <span id="onlineStatus">Connecting...</span>
                 </div>
+                <button class="btn-mobile-call" onclick="document.getElementById('mobileUsersPopup').classList.add('active')">
+                    📞 Call
+                </button>
             </div>
 
             <div id="messagesList"></div>
@@ -499,6 +580,17 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Mobile Users Popup -->
+    <div class="mobile-users-popup" id="mobileUsersPopup">
+        <div class="mobile-users-box">
+            <h3>📞 Call Someone</h3>
+            <div id="mobileUsersList"></div>
+            <button class="btn-close-popup" onclick="document.getElementById('mobileUsersPopup').classList.remove('active')">
+                Close
+            </button>
+        </div>
     </div>
 
     <!-- Call Overlay -->

@@ -9,12 +9,15 @@ let currentUser = "";
 // Function to update online users list
 function updateUsersList(users) {
     const usersList = document.getElementById("usersList");
+    const mobileUsersList = document.getElementById("mobileUsersList");
     const userCount = document.getElementById("userCount");
     
     userCount.textContent = users.length;
     usersList.innerHTML = "";
+    mobileUsersList.innerHTML = "";
     
     users.forEach(function(user) {
+        // Desktop sidebar item
         const userDiv = document.createElement("div");
         userDiv.className = "user-item";
         userDiv.innerHTML = `
@@ -22,6 +25,17 @@ function updateUsersList(users) {
             ${user !== currentUser ? `<button class="btn-call" onclick="initiateCall('${user}')">📞</button>` : ''}
         `;
         usersList.appendChild(userDiv);
+
+        // Mobile popup item
+        if (user !== currentUser) {
+            const mobileDiv = document.createElement("div");
+            mobileDiv.className = "mobile-user-item";
+            mobileDiv.innerHTML = `
+                <span>${user}</span>
+                <button class="btn-call" onclick="initiateCall('${user}'); document.getElementById('mobileUsersPopup').classList.remove('active');">📞 Call</button>
+            `;
+            mobileUsersList.appendChild(mobileDiv);
+        }
     });
 }
 
