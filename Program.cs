@@ -11,7 +11,11 @@ builder.Services.AddSignalR(options =>
 var app = builder.Build();
 
 // Serve static files (HTML, JS, CSS)
-app.UseDefaultFiles();
+// Set login.html as the default page
+var defaultFilesOptions = new DefaultFilesOptions();
+defaultFilesOptions.DefaultFileNames.Clear();
+defaultFilesOptions.DefaultFileNames.Add("login.html");
+app.UseDefaultFiles(defaultFilesOptions);
 app.UseStaticFiles();
 
 // Map the ChatHub to /chatHub endpoint
