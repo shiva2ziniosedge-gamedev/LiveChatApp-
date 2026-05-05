@@ -492,7 +492,6 @@
                 <div>
                     <h2>Let's Talk 💬</h2>
                     <span id="onlineStatus">Connecting...</span>
-                    <span id="loggedInAs" style="color:rgba(255,255,255,0.4); font-size:12px; margin-left:8px;"></span>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button class="btn-mobile-users" id="mobileCallBtn">📞 Users</button>
@@ -560,14 +559,17 @@
                 // Not logged in - redirect to login
                 window.location.href = "/login.html";
             } else {
-                // Logged in - set username from Firebase
-                window.firebaseUser = user;
-                document.getElementById("userInput").value = user.displayName || user.email;
-                document.getElementById("userInput").disabled = true;
-
-                // Show logout button
-                document.getElementById("logoutBtn").style.display = "block";
-                document.getElementById("loggedInAs").textContent = user.displayName || user.email;
+                // Reload user to get latest profile (displayName)
+                user.reload().then(function() {
+                    const freshUser = firebase.auth().currentUser;
+                    const name = freshUser.displayName || freshUser.email;
+                    
+                    window.firebaseUser = freshUser;
+                    document.getElementById("userInput").value = name;
+                    document.getElementById("userInput").disabled = true;
+                    document.getElementById("logoutBtn").style.display = "block";
+                    document.getElementById("loggedInAs").textContent = name;
+                });
             }
         });
     </script>
