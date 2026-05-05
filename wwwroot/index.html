@@ -492,8 +492,12 @@
                 <div>
                     <h2>Let's Talk 💬</h2>
                     <span id="onlineStatus">Connecting...</span>
+                    <span id="loggedInAs" style="color:rgba(255,255,255,0.4); font-size:12px; margin-left:8px;"></span>
                 </div>
-                <button class="btn-mobile-users" id="mobileCallBtn">📞 Users</button>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn-mobile-users" id="mobileCallBtn">📞 Users</button>
+                    <button id="logoutBtn" onclick="firebase.auth().signOut().then(()=> window.location.href='/login.html')" style="display:none; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.7); border-radius:8px; padding:7px 12px; cursor:pointer; font-size:13px;">Logout</button>
+                </div>
             </div>
 
             <div id="messagesList"></div>
@@ -534,7 +538,39 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <audio id="remoteAudio" autoplay></audio>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyD77O5jlRji43PruIH9K4uusvFCJQxAbxQ",
+            authDomain: "livechatapp-b5399.firebaseapp.com",
+            projectId: "livechatapp-b5399",
+            storageBucket: "livechatapp-b5399.firebasestorage.app",
+            messagingSenderId: "738890891030",
+            appId: "1:738890891030:web:55fd84416375761f955a37"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // Check if user is logged in
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (!user) {
+                // Not logged in - redirect to login
+                window.location.href = "/login.html";
+            } else {
+                // Logged in - set username from Firebase
+                window.firebaseUser = user;
+                document.getElementById("userInput").value = user.displayName || user.email;
+                document.getElementById("userInput").disabled = true;
+
+                // Show logout button
+                document.getElementById("logoutBtn").style.display = "block";
+                document.getElementById("loggedInAs").textContent = user.displayName || user.email;
+            }
+        });
+    </script>
 
     <!-- Mobile users popup -->
     <div id="mobileUsersOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:200; justify-content:center; align-items:flex-end;">

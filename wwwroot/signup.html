@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Live Chat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #4a3f6b 60%, #7b6fa0 80%, #a89bc2 100%);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 45%;
+            background: linear-gradient(180deg, transparent 0%, #2d1b4e 100%);
+            clip-path: polygon(0% 60%, 8% 40%, 15% 50%, 22% 30%, 30% 45%, 38% 20%, 45% 35%, 52% 15%, 60% 30%, 68% 10%, 75% 25%, 82% 5%, 90% 20%, 95% 10%, 100% 15%, 100% 100%, 0% 100%);
+            z-index: 0; opacity: 0.8;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+        }
+
+        h2 { color: white; font-size: 26px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+        .subtitle { color: rgba(255,255,255,0.5); font-size: 14px; text-align: center; margin-bottom: 30px; }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            font-size: 14px;
+            color: white;
+            outline: none;
+            margin-bottom: 14px;
+            transition: border 0.2s, background 0.2s;
+        }
+
+        input::placeholder { color: rgba(255,255,255,0.4); }
+        input:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
+
+        .btn {
+            width: 100%;
+            padding: 13px;
+            background: #e91e8c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 15px rgba(233,30,140,0.4);
+            margin-top: 6px;
+        }
+
+        .btn:hover { background: #c2185b; transform: scale(1.02); }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .error {
+            background: rgba(233,30,74,0.2);
+            border: 1px solid rgba(233,30,74,0.4);
+            color: #ff6b8a;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        .switch {
+            text-align: center;
+            margin-top: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+        }
+
+        .switch a { color: #e91e8c; text-decoration: none; font-weight: 600; }
+        .switch a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Create Account</h2>
+        <p class="subtitle">Join the live chat</p>
+
+        <div class="error" id="errorMsg"></div>
+
+        <input type="text" id="displayName" placeholder="Your display name" />
+        <input type="email" id="email" placeholder="Email address" />
+        <input type="password" id="password" placeholder="Password (min 6 characters)" />
+        <button class="btn" id="signupBtn" onclick="signup()">Sign Up</button>
+
+        <div class="switch">
+            Already have an account? <a href="login.html">Login</a>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD77O5jlRji43PruIH9K4uusvFCJQxAbxQ",
+            authDomain: "livechatapp-b5399.firebaseapp.com",
+            projectId: "livechatapp-b5399",
+            storageBucket: "livechatapp-b5399.firebasestorage.app",
+            messagingSenderId: "738890891030",
+            appId: "1:738890891030:web:55fd84416375761f955a37"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+
+        // If already logged in, go to chat
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                window.location.href = "/index.html";
+            }
+        });
+
+        async function signup() {
+            const displayName = document.getElementById("displayName").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            const btn = document.getElementById("signupBtn");
+            const errorMsg = document.getElementById("errorMsg");
+
+            if (!displayName || !email || !password) {
+                showError("Please fill in all fields");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Creating account...";
+            errorMsg.style.display = "none";
+
+            try {
+                // Create account
+                const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
+
+                // Set display name
+                await result.user.updateProfile({ displayName: displayName });
+
+                window.location.href = "/index.html";
+            } catch (error) {
+                showError(getErrorMessage(error.code));
+                btn.disabled = false;
+                btn.textContent = "Sign Up";
+            }
+        }
+
+        function showError(msg) {
+            const errorMsg = document.getElementById("errorMsg");
+            errorMsg.textContent = msg;
+            errorMsg.style.display = "block";
+        }
+
+        function getErrorMessage(code) {
+            switch(code) {
+                case "auth/email-already-in-use": return "Email already registered. Try logging in";
+                case "auth/invalid-email": return "Invalid email address";
+                case "auth/weak-password": return "Password must be at least 6 characters";
+                default: return "Signup failed. Please try again";
+            }
+        }
+
+        document.getElementById("password").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") signup();
+        });
+    </script>
+</body>
+</html>
