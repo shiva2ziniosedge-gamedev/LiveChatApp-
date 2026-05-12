@@ -1,3 +1,4 @@
+// Working SignalR Chat
 using LiveChatApp.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
