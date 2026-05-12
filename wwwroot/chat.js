@@ -143,6 +143,7 @@ connection.on("UserLeft", function(username, users) {
 });
 
 connection.on("ReceiveMessage", function(user, message, timestamp) {
+    if (!messagesLoaded) { pendingMessages.push({ type: "text", user, text: message, timestamp }); return; }
     renderMessage(user, message, timestamp);
     document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
@@ -156,43 +157,47 @@ connection.on("UserStoppedTyping", function() {
 });
 
 connection.on("ReceiveImage", function(user, imageData, fileName, timestamp) {
+    if (!messagesLoaded) { pendingMessages.push({ type: "image", user, imageData, fileName, timestamp }); return; }
     renderImage(user, imageData, fileName, timestamp);
     document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
 
-// ── Start connection ──
-connection.start()
-    .then(function() {
+// ── Start connection (called from index.html once auth is confirmed) ──
+let messagesLoaded = false;
+let pendingMessages = []; // buffer SignalR messages that arrive before history loads
+
+window.startChatConnection = async function(user, projectId) {
+    if (currentUser) return;
+    currentUser = user;
+    currentProjectId = projectId;
+
+    try {
+        await connection.start();
         document.getElementById("onlineStatus").textContent = "Connected";
-        const user = document.getElementById("userInput").value;
-        const projectId = window._chatProjectId || "default";
-        if (user && !currentUser) {
-            currentUser = user;
-            currentProjectId = projectId;
-            connection.invoke("JoinChat", user, projectId);
-            loadMessages(); // Load history after joining
-        }
-    })
-    .catch(function(err) {
+        await connection.invoke("JoinChat", currentUser, currentProjectId);
+        await loadMessages(); // wait for full history before rendering anything new
+        messagesLoaded = true;
+        // flush any messages that arrived while history was loading
+        pendingMessages.forEach(function(m) {
+            if (m.type === "text") renderMessage(m.user, m.text, m.timestamp);
+            else if (m.type === "image") renderImage(m.user, m.imageData, m.fileName, m.timestamp);
+        });
+        pendingMessages = [];
+        const list = document.getElementById("messagesList");
+        list.scrollTop = list.scrollHeight;
+    } catch(err) {
         document.getElementById("onlineStatus").textContent = "Disconnected";
         console.error(err.toString());
-    });
+    }
+};
 
 // ── Send message ──
 document.getElementById("sendButton").addEventListener("click", function() {
     const user = document.getElementById("userInput").value;
     const message = document.getElementById("messageInput").value.trim();
-    const projectId = window._chatProjectId || "default";
-
     if (user && message) {
-        if (!currentUser) {
-            currentUser = user;
-            currentProjectId = projectId;
-            connection.invoke("JoinChat", user, projectId);
-            loadMessages();
-        }
         connection.invoke("SendMessage", user, message).catch(err => console.error(err));
-        saveMessage("text", message, null, null); // Save to Firestore
+        saveMessage("text", message, null, null);
         connection.invoke("UserStoppedTyping", user);
         document.getElementById("messageInput").value = "";
     }

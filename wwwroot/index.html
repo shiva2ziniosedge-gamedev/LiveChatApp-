@@ -569,6 +569,11 @@
                 document.getElementById("userInput").disabled = true;
                 document.getElementById("logoutBtn").style.display = "block";
                 document.querySelector(".chat-header h2").textContent = "💬 " + projectName;
+
+                // Start SignalR connection now that auth + user data are ready
+                if (window.startChatConnection) {
+                    window.startChatConnection(name, projectId);
+                }
             }
         });
     </script>
