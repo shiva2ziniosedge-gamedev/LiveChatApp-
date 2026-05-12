@@ -128,7 +128,7 @@
         <button class="btn" id="loginBtn" onclick="login()">Login</button>
 
         <div class="switch">
-            Don't have an account? <a href="signup.html">Sign up</a>
+            Contact your admin to get an account.
         </div>
     </div>
 
@@ -151,13 +151,13 @@
 
         // If already logged in, go to chat
         firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
+            if (user && user.uid) {
                 window.location.href = "/index.html";
             }
         });
 
         async function login() {
-            const email = document.getElementById("email").value;
+            const email = document.getElementById("email").value.trim();
             const password = document.getElementById("password").value;
             const btn = document.getElementById("loginBtn");
             const errorMsg = document.getElementById("errorMsg");
@@ -192,8 +192,11 @@
                 case "auth/user-not-found": return "No account found with this email";
                 case "auth/wrong-password": return "Incorrect password";
                 case "auth/invalid-email": return "Invalid email address";
+                case "auth/invalid-credential": return "Incorrect email or password";
+                case "auth/invalid-login-credentials": return "Incorrect email or password";
                 case "auth/too-many-requests": return "Too many attempts. Try again later";
-                default: return "Login failed. Please try again";
+                case "auth/user-disabled": return "This account has been disabled";
+                default: return "Login failed (" + code + ")";
             }
         }
 

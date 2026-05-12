@@ -3,8 +3,44 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 let typingTimer;
-const typingDelay = 1000; // 1 second
+const typingDelay = 1000;
 let currentUser = "";
+let currentProject = "";
+
+// Called from index.html once Firebase auth resolves
+window.initChat = function(name, project, projectName) {
+    currentUser = name;
+    currentProject = project;
+
+    document.getElementById("userInput").value = name;
+    document.getElementById("userInput").disabled = true;
+    document.getElementById("logoutBtn").style.display = "block";
+
+    const header = document.querySelector(".chat-header h2");
+    if (header) header.textContent = "💬 " + (projectName || project);
+
+    // Join the project room
+    if (connection.state === signalR.HubConnectionState.Connected) {
+        connection.invoke("JoinChat", name, project);
+    } else {
+        connection.start()
+            .then(function() {
+                document.getElementById("onlineStatus").textContent = "Connected";
+                connection.invoke("JoinChat", name, project);
+            })
+            .catch(function(err) {
+                document.getElementById("onlineStatus").textContent = "Disconnected";
+                console.error(err.toString());
+            });
+    }
+};
+
+// If Firebase auth resolved before this script loaded, run now
+if (window.pendingChatInit) {
+    const p = window.pendingChatInit;
+    window.pendingChatInit = null;
+    window.initChat(p.name, p.project, p.projectName);
+}
 
 // Function to update online users list
 function updateUsersList(users) {
@@ -93,55 +129,30 @@ connection.on("UserStoppedTyping", function (user) {
     document.getElementById("typingIndicator").textContent = "";
 });
 
-// Start connection
-connection.start()
-    .then(function() {
-        document.getElementById("onlineStatus").textContent = "Connected";
-    })
-    .catch(function (err) {
-        document.getElementById("onlineStatus").textContent = "Disconnected";
-        return console.error(err.toString());
-    });
+// Connection is started by initChat() called from Firebase auth
 
 // Send message when button clicked
 document.getElementById("sendButton").addEventListener("click", function () {
-    const user = document.getElementById("userInput").value;
-    const message = document.getElementById("messageInput").value;
+    const user = currentUser;
+    const message = document.getElementById("messageInput").value.trim();
     
-    if (user && message) {
-        // Join chat if first message
-        if (!currentUser) {
-            currentUser = user;
-            connection.invoke("JoinChat", user);
-            document.getElementById("userInput").disabled = true;
-        }
-        
+    if (user && message && currentProject) {
         connection.invoke("SendMessage", user, message).catch(function (err) {
             return console.error(err.toString());
         });
         
-        // Stop typing indicator
         connection.invoke("UserStoppedTyping", user);
-        
-        // Clear message input after sending
         document.getElementById("messageInput").value = "";
     }
 });
 
 // Detect typing
 document.getElementById("messageInput").addEventListener("input", function () {
-    const user = document.getElementById("userInput").value;
-    
-    if (user) {
-        // Tell others user is typing
-        connection.invoke("UserTyping", user);
-        
-        // Clear previous timer
+    if (currentUser) {
+        connection.invoke("UserTyping", currentUser);
         clearTimeout(typingTimer);
-        
-        // Set timer to stop typing indicator after 1 second of no typing
         typingTimer = setTimeout(function () {
-            connection.invoke("UserStoppedTyping", user);
+            connection.invoke("UserStoppedTyping", currentUser);
         }, typingDelay);
     }
 });
@@ -160,25 +171,21 @@ document.getElementById("imageButton").addEventListener("click", function () {
 // Handle image selection
 document.getElementById("imageInput").addEventListener("change", function (e) {
     const file = e.target.files[0];
-    const user = document.getElementById("userInput").value;
     
-    if (!user) {
-        alert("Please enter your name first!");
+    if (!currentUser) {
+        alert("Please wait, connecting...");
         return;
     }
     
     if (file && file.type.startsWith("image/")) {
         const reader = new FileReader();
-        
         reader.onload = function (event) {
-            const imageData = event.target.result;
-            connection.invoke("SendImage", user, imageData, file.name).catch(function (err) {
+            connection.invoke("SendImage", currentUser, event.target.result, file.name).catch(function (err) {
                 return console.error(err.toString());
             });
         };
-        
         reader.readAsDataURL(file);
-        e.target.value = ""; // Clear input
+        e.target.value = "";
     }
 });
 

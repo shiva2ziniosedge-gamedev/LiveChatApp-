@@ -15,7 +15,7 @@ var app = builder.Build();
 // Set login.html as the default page
 var defaultFilesOptions = new DefaultFilesOptions();
 defaultFilesOptions.DefaultFileNames.Clear();
-defaultFilesOptions.DefaultFileNames.Add("login.html");
+defaultFilesOptions.DefaultFileNames.Add("home.html");
 app.UseDefaultFiles(defaultFilesOptions);
 app.UseStaticFiles();
 

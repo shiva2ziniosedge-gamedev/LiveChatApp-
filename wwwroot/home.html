@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Chat - Welcome</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #4a3f6b 60%, #7b6fa0 80%, #a89bc2 100%);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 45%;
+            background: linear-gradient(180deg, transparent 0%, #2d1b4e 100%);
+            clip-path: polygon(0% 60%, 8% 40%, 15% 50%, 22% 30%, 30% 45%, 38% 20%, 45% 35%, 52% 15%, 60% 30%, 68% 10%, 75% 25%, 82% 5%, 90% 20%, 95% 10%, 100% 15%, 100% 100%, 0% 100%);
+            z-index: 0; opacity: 0.8;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .logo { font-size: 48px; margin-bottom: 16px; }
+
+        h1 {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn:hover { transform: scale(1.02); }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-user {
+            background: #e91e8c;
+            color: white;
+            box-shadow: 0 4px 20px rgba(233,30,140,0.4);
+        }
+
+        .btn-user:hover { background: #c2185b; box-shadow: 0 6px 25px rgba(233,30,140,0.5); }
+
+        .btn-admin {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.85);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-admin:hover { background: rgba(255,255,255,0.18); }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">💬</div>
+        <h1>Live Chat</h1>
+        <p class="subtitle">Real-time messaging powered by SignalR</p>
+
+        <a class="btn btn-user" href="/login.html">
+            👤 User Login
+        </a>
+        <a class="btn btn-admin" href="/admin.html">
+            🛡️ Admin Login
+        </a>
+    </div>
+</body>
+</html>

@@ -4,118 +4,116 @@ namespace LiveChatApp.Hubs
 {
     public class ChatHub : Hub
     {
-        // Static dictionary to store connected users
-        private static Dictionary<string, string> ConnectedUsers = new Dictionary<string, string>();
-
-        public override async Task OnConnectedAsync()
-        {
-            await base.OnConnectedAsync();
-        }
+        // connectionId -> (username, projectId)
+        private static Dictionary<string, (string Name, string Project)> ConnectedUsers
+            = new Dictionary<string, (string, string)>();
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            // Find and remove user by connection ID
-            var user = ConnectedUsers.FirstOrDefault(x => x.Key == Context.ConnectionId);
-            if (!string.IsNullOrEmpty(user.Value))
+            if (ConnectedUsers.TryGetValue(Context.ConnectionId, out var user))
             {
                 ConnectedUsers.Remove(Context.ConnectionId);
-                await Clients.All.SendAsync("UserLeft", user.Value, ConnectedUsers.Values.ToList());
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, user.Project);
+
+                var projectUsers = ConnectedUsers
+                    .Where(x => x.Value.Project == user.Project)
+                    .Select(x => x.Value.Name)
+                    .ToList();
+
+                await Clients.Group(user.Project).SendAsync("UserLeft", user.Name, projectUsers);
             }
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task JoinChat(string username)
+        // Join a project room
+        public async Task JoinChat(string username, string projectId)
         {
-            // Add user to connected users
-            ConnectedUsers[Context.ConnectionId] = username;
-            
-            // Notify all clients about new user and send updated user list
-            await Clients.All.SendAsync("UserJoined", username, ConnectedUsers.Values.ToList());
+            ConnectedUsers[Context.ConnectionId] = (username, projectId);
+            await Groups.AddToGroupAsync(Context.ConnectionId, projectId);
+
+            var projectUsers = ConnectedUsers
+                .Where(x => x.Value.Project == projectId)
+                .Select(x => x.Value.Name)
+                .ToList();
+
+            await Clients.Group(projectId).SendAsync("UserJoined", username, projectUsers);
         }
 
         public async Task SendMessage(string user, string message)
         {
+            if (!ConnectedUsers.TryGetValue(Context.ConnectionId, out var info)) return;
             var timestamp = DateTime.Now.ToString("HH:mm");
-            await Clients.All.SendAsync("ReceiveMessage", user, message, timestamp);
+            await Clients.Group(info.Project).SendAsync("ReceiveMessage", user, message, timestamp);
         }
 
         public async Task UserTyping(string user)
         {
-            await Clients.Others.SendAsync("UserIsTyping", user);
+            if (!ConnectedUsers.TryGetValue(Context.ConnectionId, out var info)) return;
+            await Clients.OthersInGroup(info.Project).SendAsync("UserIsTyping", user);
         }
 
         public async Task UserStoppedTyping(string user)
         {
-            await Clients.Others.SendAsync("UserStoppedTyping", user);
+            if (!ConnectedUsers.TryGetValue(Context.ConnectionId, out var info)) return;
+            await Clients.OthersInGroup(info.Project).SendAsync("UserStoppedTyping", user);
         }
 
         public async Task SendImage(string user, string imageData, string fileName)
         {
+            if (!ConnectedUsers.TryGetValue(Context.ConnectionId, out var info)) return;
             var timestamp = DateTime.Now.ToString("HH:mm");
-            await Clients.All.SendAsync("ReceiveImage", user, imageData, fileName, timestamp);
+            await Clients.Group(info.Project).SendAsync("ReceiveImage", user, imageData, fileName, timestamp);
         }
 
+        // ── Voice Call (scoped to project members only) ──
 
-
-
-        // ─────────────────────────────────────────────────────────────
-        // VOICE CALL FEATURES - SignalR signaling methods for WebRTC
-        // ─────────────────────────────────────────────────────────────
-
-        // Called when a user initiates a voice call to another user
         public async Task CallUser(string caller, string target)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("IncomingCall", caller);
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("IncomingCall", caller);
         }
 
-        // Called when the target user accepts the incoming call
         public async Task AcceptCall(string caller)
         {
-            var callerConnection = ConnectedUsers.FirstOrDefault(x => x.Value == caller);
-            if (!string.IsNullOrEmpty(callerConnection.Key))
-                await Clients.Client(callerConnection.Key).SendAsync("CallAccepted", ConnectedUsers[Context.ConnectionId]);
+            var callerConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == caller);
+            if (!string.IsNullOrEmpty(callerConn.Key))
+                await Clients.Client(callerConn.Key).SendAsync("CallAccepted", ConnectedUsers[Context.ConnectionId].Name);
         }
 
-        // Called when the target user rejects the incoming call
         public async Task RejectCall(string caller)
         {
-            var callerConnection = ConnectedUsers.FirstOrDefault(x => x.Value == caller);
-            if (!string.IsNullOrEmpty(callerConnection.Key))
-                await Clients.Client(callerConnection.Key).SendAsync("CallRejected");
+            var callerConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == caller);
+            if (!string.IsNullOrEmpty(callerConn.Key))
+                await Clients.Client(callerConn.Key).SendAsync("CallRejected");
         }
 
-        // Called when either user ends the active call
         public async Task EndCall(string target)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("CallEnded");
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("CallEnded");
         }
 
-        // WebRTC signaling - exchange SDP offer between peers
         public async Task SendOffer(string target, string offer)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("ReceiveOffer", offer);
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("ReceiveOffer", offer);
         }
 
-        // WebRTC signaling - exchange SDP answer between peers
         public async Task SendAnswer(string target, string answer)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("ReceiveAnswer", answer);
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("ReceiveAnswer", answer);
         }
 
-        // WebRTC signaling - exchange ICE candidates between peers
         public async Task SendIceCandidate(string target, string candidate)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("ReceiveIceCandidate", candidate);
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("ReceiveIceCandidate", candidate);
         }
     }
 }
