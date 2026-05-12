@@ -1,0 +1,145 @@
+================================================================
+LiveChatApp - Full Project Summary
+================================================================
+
+TECH STACK
+----------
+Backend  : ASP.NET Core 9 + SignalR (real-time)
+Frontend : HTML / CSS / Vanilla JS
+Auth     : Firebase Authentication (email/password)
+Database : Firebase Firestore (projects + users)
+Calls    : WebRTC (peer-to-peer audio)
+
+----------------------------------------------------------------
+
+GIT
+---
+Repo   : https://github.com/shiva2ziniosedge-gamedev/LiveChatApp-
+Branch : working-backup  <-- ALL LATEST CODE IS HERE
+main   : old/broken history, ignore it
+
+Local path:
+  C:\Users\Admin\Downloads\ASPChatApplication\ASPChatApplication\LiveChatApp
+
+Clone on new machine:
+  git clone https://github.com/shiva2ziniosedge-gamedev/LiveChatApp-.git
+  git checkout working-backup
+
+----------------------------------------------------------------
+
+FIREBASE
+--------
+Project ID   : livechatapp-b5399
+Console      : https://console.firebase.google.com/project/livechatapp-b5399
+Auth domain  : livechatapp-b5399.firebaseapp.com
+Admin email  : shiva2gamedev@gmail.com
+Admin UID    : SZvYG7wbQ9TzgWySvLwVU240reD3
+Services     : Firebase Auth + Firestore
+
+----------------------------------------------------------------
+
+RUN LOCALLY
+-----------
+  dotnet run --project LiveChatApp.csproj
+  Open: http://localhost:5300
+
+Port changed from 5206 to 5300 (in Properties/launchSettings.json)
+
+----------------------------------------------------------------
+
+FILE STRUCTURE
+--------------
+LiveChatApp/
+  hubs/
+    ChatHub.cs         - SignalR hub, project-based group rooms
+  wwwroot/
+    home.html          - Landing page (Admin Login / User Login buttons)
+    login.html         - User login only, no signup
+    signup.html        - Disabled, redirects to login.html
+    admin.html         - Admin dashboard (Firestore powered)
+    index.html         - Chat UI
+    chat.js            - SignalR client + WebRTC voice calls
+  Program.cs           - App entry point, SignalR + static files
+  appsettings.json     - App config
+  Properties/
+    launchSettings.json - Port config (5300)
+
+----------------------------------------------------------------
+
+FULL FLOW
+---------
+
+1. User opens http://localhost:5300
+   -> home.html shows two buttons: Admin Login / User Login
+
+2. USER LOGIN path:
+   -> login.html
+   -> Firebase Auth (email + password)
+   -> On success: Firestore lookup by Firebase UID
+   -> Gets projectId and projectName assigned by admin
+   -> Redirects to index.html (chat)
+   -> SignalR connects and calls JoinChat(name, projectId)
+   -> User joins SignalR GROUP = projectId
+   -> Can only chat/image/call people in same project
+
+3. ADMIN LOGIN path:
+   -> admin.html
+   -> Firebase Auth, checks UID == admin UID
+   -> Dashboard loads projects and users from Firestore
+
+4. ADMIN DASHBOARD:
+   Create Project -> saved to Firestore /projects collection
+   Create User    -> creates Firebase Auth account (secondary app)
+                  -> saves to Firestore /users/{uid}
+                  -> fields: name, email, projectId, projectName, created
+   Edit User      -> change name or reassign to different project
+   Delete User    -> removes from Firestore
+                     (also manually delete from Firebase Console > Auth)
+
+----------------------------------------------------------------
+
+HOW PROJECT ROOMS WORK
+-----------------------
+- Each user in Firestore has a projectId field
+- On login, index.html fetches /users/{uid} from Firestore
+- projectId is passed to SignalR: JoinChat(name, projectId)
+- SignalR adds connection to a GROUP named by projectId
+- Messages, images, typing, calls = scoped to that group only
+- Project A users CANNOT see or interact with Project B users
+
+----------------------------------------------------------------
+
+FIRESTORE SETUP (one-time, do this in Firebase Console)
+--------------------------------------------------------
+1. Firebase Console -> Firestore Database -> Create database
+2. Paste these security rules:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /projects/{id} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == "SZvYG7wbQ9TzgWySvLwVU240reD3";
+    }
+    match /users/{uid} {
+      allow read: if request.auth.uid == uid
+                  || request.auth.uid == "SZvYG7wbQ9TzgWySvLwVU240reD3";
+      allow write: if request.auth.uid == "SZvYG7wbQ9TzgWySvLwVU240reD3";
+    }
+  }
+}
+
+----------------------------------------------------------------
+
+VS CODE SETUP
+-------------
+Extensions needed:
+  - C# Dev Kit (Microsoft)
+
+Open folder:
+  File -> Open Folder -> ASPChatApplication/LiveChatApp
+
+Run:
+  dotnet run --project LiveChatApp.csproj
+
+================================================================

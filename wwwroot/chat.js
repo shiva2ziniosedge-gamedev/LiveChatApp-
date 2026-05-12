@@ -3,44 +3,8 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 let typingTimer;
-const typingDelay = 1000;
+const typingDelay = 1000; // 1 second
 let currentUser = "";
-let currentProject = "";
-
-// Called from index.html once Firebase auth resolves
-window.initChat = function(name, project, projectName) {
-    currentUser = name;
-    currentProject = project;
-
-    document.getElementById("userInput").value = name;
-    document.getElementById("userInput").disabled = true;
-    document.getElementById("logoutBtn").style.display = "block";
-
-    const header = document.querySelector(".chat-header h2");
-    if (header) header.textContent = "💬 " + (projectName || project);
-
-    // Join the project room
-    if (connection.state === signalR.HubConnectionState.Connected) {
-        connection.invoke("JoinChat", name, project);
-    } else {
-        connection.start()
-            .then(function() {
-                document.getElementById("onlineStatus").textContent = "Connected";
-                connection.invoke("JoinChat", name, project);
-            })
-            .catch(function(err) {
-                document.getElementById("onlineStatus").textContent = "Disconnected";
-                console.error(err.toString());
-            });
-    }
-};
-
-// If Firebase auth resolved before this script loaded, run now
-if (window.pendingChatInit) {
-    const p = window.pendingChatInit;
-    window.pendingChatInit = null;
-    window.initChat(p.name, p.project, p.projectName);
-}
 
 // Function to update online users list
 function updateUsersList(users) {
@@ -78,30 +42,24 @@ function updateUsersList(users) {
 // User joined
 connection.on("UserJoined", function (username, users) {
     updateUsersList(users);
-    
     const div = document.createElement("div");
     div.className = "notification";
     div.innerHTML = `<span>${username} joined the chat</span>`;
     document.getElementById("messagesList").appendChild(div);
-    
-    const messagesList = document.getElementById("messagesList");
-    messagesList.scrollTop = messagesList.scrollHeight;
+    document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
 
 // User left
 connection.on("UserLeft", function (username, users) {
     updateUsersList(users);
-    
     const div = document.createElement("div");
     div.className = "notification";
     div.innerHTML = `<span>${username} left the chat</span>`;
     document.getElementById("messagesList").appendChild(div);
-    
-    const messagesList = document.getElementById("messagesList");
-    messagesList.scrollTop = messagesList.scrollHeight;
+    document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
 
-// Receive messages from server
+// Receive messages
 connection.on("ReceiveMessage", function (user, message, timestamp) {
     const messageDiv = document.createElement("div");
     messageDiv.className = "message";
@@ -113,74 +71,75 @@ connection.on("ReceiveMessage", function (user, message, timestamp) {
         </div>
     `;
     document.getElementById("messagesList").appendChild(messageDiv);
-    
-    // Auto scroll to bottom
-    const messagesList = document.getElementById("messagesList");
-    messagesList.scrollTop = messagesList.scrollHeight;
+    document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
 
-// Show typing indicator
 connection.on("UserIsTyping", function (user) {
     document.getElementById("typingIndicator").textContent = `${user} is typing...`;
 });
 
-// Hide typing indicator
 connection.on("UserStoppedTyping", function (user) {
     document.getElementById("typingIndicator").textContent = "";
 });
 
-// Connection is started by initChat() called from Firebase auth
+// Start connection
+connection.start()
+    .then(function() {
+        document.getElementById("onlineStatus").textContent = "Connected";
+    })
+    .catch(function (err) {
+        document.getElementById("onlineStatus").textContent = "Disconnected";
+        return console.error(err.toString());
+    });
 
-// Send message when button clicked
+// Send message
 document.getElementById("sendButton").addEventListener("click", function () {
-    const user = currentUser;
-    const message = document.getElementById("messageInput").value.trim();
+    const user = document.getElementById("userInput").value;
+    const message = document.getElementById("messageInput").value;
     
-    if (user && message && currentProject) {
+    if (user && message) {
+        if (!currentUser) {
+            currentUser = user;
+            connection.invoke("JoinChat", user);
+            document.getElementById("userInput").disabled = true;
+        }
         connection.invoke("SendMessage", user, message).catch(function (err) {
             return console.error(err.toString());
         });
-        
         connection.invoke("UserStoppedTyping", user);
         document.getElementById("messageInput").value = "";
     }
 });
 
-// Detect typing
+// Typing detection
 document.getElementById("messageInput").addEventListener("input", function () {
-    if (currentUser) {
-        connection.invoke("UserTyping", currentUser);
+    const user = document.getElementById("userInput").value;
+    if (user) {
+        connection.invoke("UserTyping", user);
         clearTimeout(typingTimer);
         typingTimer = setTimeout(function () {
-            connection.invoke("UserStoppedTyping", currentUser);
+            connection.invoke("UserStoppedTyping", user);
         }, typingDelay);
     }
 });
 
-// Send message on Enter key
 document.getElementById("messageInput").addEventListener("keypress", function (e) {
-    if (e.key === "Enter") {
-        document.getElementById("sendButton").click();
-    }
+    if (e.key === "Enter") document.getElementById("sendButton").click();
 });
-// Handle image button click
+
+// Image
 document.getElementById("imageButton").addEventListener("click", function () {
     document.getElementById("imageInput").click();
 });
 
-// Handle image selection
 document.getElementById("imageInput").addEventListener("change", function (e) {
     const file = e.target.files[0];
-    
-    if (!currentUser) {
-        alert("Please wait, connecting...");
-        return;
-    }
-    
+    const user = document.getElementById("userInput").value;
+    if (!user) { alert("Please enter your name first!"); return; }
     if (file && file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onload = function (event) {
-            connection.invoke("SendImage", currentUser, event.target.result, file.name).catch(function (err) {
+            connection.invoke("SendImage", user, event.target.result, file.name).catch(function (err) {
                 return console.error(err.toString());
             });
         };
@@ -189,7 +148,6 @@ document.getElementById("imageInput").addEventListener("change", function (e) {
     }
 });
 
-// Listen for incoming images
 connection.on("ReceiveImage", function (user, imageData, fileName, timestamp) {
     const messageDiv = document.createElement("div");
     messageDiv.className = "message";
@@ -201,27 +159,14 @@ connection.on("ReceiveImage", function (user, imageData, fileName, timestamp) {
         </div>
     `;
     document.getElementById("messagesList").appendChild(messageDiv);
-    
-    // Auto scroll to bottom
-    const messagesList = document.getElementById("messagesList");
-    messagesList.scrollTop = messagesList.scrollHeight;
+    document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
 
-
-
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// VOICE CALL FEATURES
-// Uses WebRTC for peer-to-peer audio and SignalR for call signaling
-// Flow: initiateCall → CallUser (SignalR) → IncomingCall → AcceptCall → WebRTC
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Voice Calls ──
 let localStream = null;
 let peerConnection = null;
 let callTarget = null;
 
-// ICE servers for WebRTC peer connection (STUN helps with NAT traversal)
 const iceServers = {
     iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
@@ -229,7 +174,6 @@ const iceServers = {
     ]
 };
 
-// Show the call overlay with given status and name
 function showCallOverlay(status, name, showAccept) {
     document.getElementById("callStatus").textContent = status;
     document.getElementById("callName").textContent = name;
@@ -238,126 +182,64 @@ function showCallOverlay(status, name, showAccept) {
     document.getElementById("rejectCallBtn").innerHTML = showAccept ? "📵" : "📵";
 }
 
-// Hide the call overlay
 function hideCallOverlay() {
     document.getElementById("callOverlay").classList.remove("active");
 }
 
-// Create WebRTC peer connection and set up event handlers
 function createPeerConnection(target) {
     peerConnection = new RTCPeerConnection(iceServers);
-
-    // When ICE candidate is found, send it to the other peer via SignalR
     peerConnection.onicecandidate = function(event) {
-        if (event.candidate) {
-            connection.invoke("SendIceCandidate", target, JSON.stringify(event.candidate));
-        }
+        if (event.candidate) connection.invoke("SendIceCandidate", target, JSON.stringify(event.candidate));
     };
-
-    // When remote audio track arrives, play it through speakers
     peerConnection.ontrack = function(event) {
         const audio = document.getElementById("remoteAudio");
         audio.srcObject = event.streams[0];
         audio.play();
     };
-
-    // Add local mic stream tracks to the peer connection
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            peerConnection.addTrack(track, localStream);
-        });
-    }
+    if (localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 }
 
-// Called when user clicks the call button next to a user's name
 async function initiateCall(target) {
-    if (!currentUser) {
-        alert("Please enter your name and send a message first!");
-        return;
-    }
+    if (!currentUser) { alert("Please enter your name and send a message first!"); return; }
     if (target === currentUser) return;
-
     callTarget = target;
-
-    // Request mic access from browser
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-
     createPeerConnection(target);
-
-    // Create SDP offer and send to target via SignalR
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     connection.invoke("SendOffer", target, JSON.stringify(offer));
-
-    // Notify target user via SignalR
     connection.invoke("CallUser", currentUser, target);
-
     showCallOverlay("Calling...", target, false);
 }
 
-// SignalR: incoming call from another user
-connection.on("IncomingCall", function(caller) {
-    callTarget = caller;
-    showCallOverlay("Incoming Call", caller, true);
-});
+connection.on("IncomingCall", function(caller) { callTarget = caller; showCallOverlay("Incoming Call", caller, true); });
+connection.on("CallAccepted", async function() { document.getElementById("callStatus").textContent = "Connected"; document.getElementById("acceptCallBtn").style.display = "none"; });
+connection.on("CallRejected", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } alert("Call was rejected."); });
+connection.on("CallEnded", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } });
 
-// SignalR: target accepted the call
-connection.on("CallAccepted", async function(accepter) {
-    document.getElementById("callStatus").textContent = "Connected";
-    document.getElementById("acceptCallBtn").style.display = "none";
-});
-
-// SignalR: target rejected the call
-connection.on("CallRejected", function() {
-    hideCallOverlay();
-    if (peerConnection) { peerConnection.close(); peerConnection = null; }
-    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-    alert("Call was rejected.");
-});
-
-// SignalR: other user ended the call
-connection.on("CallEnded", function() {
-    hideCallOverlay();
-    if (peerConnection) { peerConnection.close(); peerConnection = null; }
-    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-});
-
-// SignalR: receive WebRTC SDP offer from caller
 connection.on("ReceiveOffer", async function(offerJson) {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     createPeerConnection(callTarget);
-
-    const offer = JSON.parse(offerJson);
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-    // Create answer and send back via SignalR
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerJson)));
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
     connection.invoke("SendAnswer", callTarget, JSON.stringify(answer));
 });
 
-// SignalR: receive WebRTC SDP answer from callee
 connection.on("ReceiveAnswer", async function(answerJson) {
-    const answer = JSON.parse(answerJson);
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answerJson)));
 });
 
-// SignalR: receive ICE candidate from other peer
 connection.on("ReceiveIceCandidate", async function(candidateJson) {
-    const candidate = JSON.parse(candidateJson);
-    if (peerConnection) {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-    }
+    if (peerConnection) await peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidateJson)));
 });
 
-// Accept button clicked on incoming call overlay
 document.getElementById("acceptCallBtn").addEventListener("click", function() {
     connection.invoke("AcceptCall", callTarget);
     document.getElementById("callStatus").textContent = "Connected";
     document.getElementById("acceptCallBtn").style.display = "none";
 });
 
-// Reject/End button clicked on call overlay
 document.getElementById("rejectCallBtn").addEventListener("click", function() {
     connection.invoke("EndCall", callTarget);
     hideCallOverlay();
@@ -366,7 +248,6 @@ document.getElementById("rejectCallBtn").addEventListener("click", function() {
     callTarget = null;
 });
 
-// Mobile call button - opens users popup
 document.getElementById("mobileCallBtn").addEventListener("click", function() {
     document.getElementById("mobileUsersOverlay").style.display = "flex";
 });

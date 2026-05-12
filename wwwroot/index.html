@@ -537,9 +537,9 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <audio id="remoteAudio" autoplay></audio>
 
     <script>
@@ -552,31 +552,19 @@
             appId: "1:738890891030:web:55fd84416375761f955a37"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
 
-        firebase.auth().onAuthStateChanged(async function(user) {
-            if (!user) { window.location.href = "/login.html"; return; }
-            await user.reload();
-            const freshUser = firebase.auth().currentUser;
-            const name = freshUser.displayName || freshUser.email;
-
-            // Load project assignment from Firestore
-            let projectId = "default";
-            let projectName = "Chat";
-            try {
-                const doc = await db.collection("users").doc(freshUser.uid).get();
-                if (doc.exists) {
-                    projectId = doc.data().projectId || "default";
-                    projectName = doc.data().projectName || "Chat";
-                }
-            } catch(e) { console.warn("Firestore lookup failed", e); }
-
-            document.getElementById("loggedInAs").textContent = name;
-
-            if (typeof window.initChat === "function") {
-                window.initChat(name, projectId, projectName);
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (!user) {
+                window.location.href = "/login.html";
             } else {
-                window.pendingChatInit = { name, project: projectId, projectName };
+                user.reload().then(function() {
+                    const freshUser = firebase.auth().currentUser;
+                    const name = freshUser.displayName || freshUser.email;
+                    window.firebaseUser = freshUser;
+                    document.getElementById("userInput").value = name;
+                    document.getElementById("userInput").disabled = true;
+                    document.getElementById("logoutBtn").style.display = "block";
+                });
             }
         });
     </script>
