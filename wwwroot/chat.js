@@ -3,21 +3,107 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 let typingTimer;
-const typingDelay = 1000; // 1 second
+const typingDelay = 1000;
 let currentUser = "";
+let currentProjectId = "default";
 
-// Function to update online users list
+// ── Firestore helpers ──
+function getDb() { return firebase.firestore(); }
+
+// Save message to Firestore
+async function saveMessage(type, text, imageData, fileName) {
+    try {
+        await getDb().collection("messages").doc(currentProjectId)
+            .collection("chats").add({
+                user: currentUser,
+                type: type,
+                text: text || null,
+                imageData: imageData || null,
+                fileName: fileName || null,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+    } catch(e) {
+        console.warn("Failed to save message:", e);
+    }
+}
+
+// Load all messages for this project on page load
+async function loadMessages() {
+    try {
+        const snap = await getDb().collection("messages").doc(currentProjectId)
+            .collection("chats").orderBy("timestamp", "asc").get();
+        snap.forEach(doc => {
+            const d = doc.data();
+            if (d.type === "text") {
+                renderMessage(d.user, d.text, d.timestamp ? formatTime(d.timestamp.toDate()) : "");
+            } else if (d.type === "image") {
+                renderImage(d.user, d.imageData, d.fileName, d.timestamp ? formatTime(d.timestamp.toDate()) : "");
+            }
+        });
+        const list = document.getElementById("messagesList");
+        list.scrollTop = list.scrollHeight;
+    } catch(e) {
+        console.warn("Failed to load messages:", e);
+    }
+}
+
+function formatTime(date) {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+// Compress image before storing (keeps under Firestore 1MB limit)
+function compressImage(file, callback) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement("canvas");
+            const maxW = 800;
+            let w = img.width, h = img.height;
+            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+            callback(canvas.toDataURL("image/jpeg", 0.7));
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+// ── Render helpers ──
+function renderMessage(user, message, timestamp) {
+    const div = document.createElement("div");
+    div.className = "message";
+    div.innerHTML = `
+        <div class="message-content">
+            <div class="message-user">${user}</div>
+            <div class="message-text">${message}</div>
+            <div class="message-time">${timestamp}</div>
+        </div>`;
+    document.getElementById("messagesList").appendChild(div);
+}
+
+function renderImage(user, imageData, fileName, timestamp) {
+    const div = document.createElement("div");
+    div.className = "message";
+    div.innerHTML = `
+        <div class="message-content">
+            <div class="message-user">${user}</div>
+            <img src="${imageData}" alt="${fileName}" style="max-width:300px;border-radius:8px;margin:5px 0;" />
+            <div class="message-time">${timestamp}</div>
+        </div>`;
+    document.getElementById("messagesList").appendChild(div);
+}
+
+// ── Users list ──
 function updateUsersList(users) {
     const usersList = document.getElementById("usersList");
     const userCount = document.getElementById("userCount");
     const mobileUsersList = document.getElementById("mobileUsersList");
-    
     userCount.textContent = users.length;
     usersList.innerHTML = "";
     if (mobileUsersList) mobileUsersList.innerHTML = "";
-    
     users.forEach(function(user) {
-        // Desktop sidebar
         const userDiv = document.createElement("div");
         userDiv.className = "user-item";
         userDiv.innerHTML = `
@@ -25,22 +111,20 @@ function updateUsersList(users) {
             ${user !== currentUser ? `<button class="btn-call" onclick="initiateCall('${user}')">📞</button>` : ''}
         `;
         usersList.appendChild(userDiv);
-
-        // Mobile popup list
         if (mobileUsersList && user !== currentUser) {
             const mobileDiv = document.createElement("div");
-            mobileDiv.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(255,255,255,0.08); border-radius:10px; margin-bottom:8px; color:rgba(255,255,255,0.9); font-size:15px;";
+            mobileDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.08);border-radius:10px;margin-bottom:8px;color:rgba(255,255,255,0.9);font-size:15px;";
             mobileDiv.innerHTML = `
                 <span>${user}</span>
-                <button onclick="initiateCall('${user}'); document.getElementById('mobileUsersOverlay').style.display='none';" style="background:rgba(0,229,160,0.2); border:1px solid rgba(0,229,160,0.3); color:#00e5a0; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:14px;">📞 Call</button>
+                <button onclick="initiateCall('${user}');document.getElementById('mobileUsersOverlay').style.display='none';" style="background:rgba(0,229,160,0.2);border:1px solid rgba(0,229,160,0.3);color:#00e5a0;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:14px;">📞 Call</button>
             `;
             mobileUsersList.appendChild(mobileDiv);
         }
     });
 }
 
-// User joined
-connection.on("UserJoined", function (username, users) {
+// ── SignalR events ──
+connection.on("UserJoined", function(username, users) {
     updateUsersList(users);
     const div = document.createElement("div");
     div.className = "notification";
@@ -49,8 +133,7 @@ connection.on("UserJoined", function (username, users) {
     document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
 
-// User left
-connection.on("UserLeft", function (username, users) {
+connection.on("UserLeft", function(username, users) {
     updateUsersList(users);
     const div = document.createElement("div");
     div.className = "notification";
@@ -59,115 +142,95 @@ connection.on("UserLeft", function (username, users) {
     document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
 
-// Receive messages
-connection.on("ReceiveMessage", function (user, message, timestamp) {
-    const messageDiv = document.createElement("div");
-    messageDiv.className = "message";
-    messageDiv.innerHTML = `
-        <div class="message-content">
-            <div class="message-user">${user}</div>
-            <div class="message-text">${message}</div>
-            <div class="message-time">${timestamp}</div>
-        </div>
-    `;
-    document.getElementById("messagesList").appendChild(messageDiv);
+connection.on("ReceiveMessage", function(user, message, timestamp) {
+    renderMessage(user, message, timestamp);
     document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
 });
 
-connection.on("UserIsTyping", function (user) {
+connection.on("UserIsTyping", function(user) {
     document.getElementById("typingIndicator").textContent = `${user} is typing...`;
 });
 
-connection.on("UserStoppedTyping", function (user) {
+connection.on("UserStoppedTyping", function() {
     document.getElementById("typingIndicator").textContent = "";
 });
 
-// Start connection
+connection.on("ReceiveImage", function(user, imageData, fileName, timestamp) {
+    renderImage(user, imageData, fileName, timestamp);
+    document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
+});
+
+// ── Start connection ──
 connection.start()
     .then(function() {
         document.getElementById("onlineStatus").textContent = "Connected";
-        // Auto-join if userInput already populated (Firebase set it before connection started)
         const user = document.getElementById("userInput").value;
         const projectId = window._chatProjectId || "default";
         if (user && !currentUser) {
             currentUser = user;
+            currentProjectId = projectId;
             connection.invoke("JoinChat", user, projectId);
+            loadMessages(); // Load history after joining
         }
     })
-    .catch(function (err) {
+    .catch(function(err) {
         document.getElementById("onlineStatus").textContent = "Disconnected";
-        return console.error(err.toString());
+        console.error(err.toString());
     });
 
-// Send message
-document.getElementById("sendButton").addEventListener("click", function () {
+// ── Send message ──
+document.getElementById("sendButton").addEventListener("click", function() {
     const user = document.getElementById("userInput").value;
-    const message = document.getElementById("messageInput").value;
+    const message = document.getElementById("messageInput").value.trim();
     const projectId = window._chatProjectId || "default";
 
     if (user && message) {
         if (!currentUser) {
             currentUser = user;
+            currentProjectId = projectId;
             connection.invoke("JoinChat", user, projectId);
-            document.getElementById("userInput").disabled = true;
+            loadMessages();
         }
-        connection.invoke("SendMessage", user, message).catch(function (err) {
-            return console.error(err.toString());
-        });
+        connection.invoke("SendMessage", user, message).catch(err => console.error(err));
+        saveMessage("text", message, null, null); // Save to Firestore
         connection.invoke("UserStoppedTyping", user);
         document.getElementById("messageInput").value = "";
     }
 });
 
-// Typing detection
-document.getElementById("messageInput").addEventListener("input", function () {
+document.getElementById("messageInput").addEventListener("input", function() {
     const user = document.getElementById("userInput").value;
     if (user) {
         connection.invoke("UserTyping", user);
         clearTimeout(typingTimer);
-        typingTimer = setTimeout(function () {
+        typingTimer = setTimeout(function() {
             connection.invoke("UserStoppedTyping", user);
         }, typingDelay);
     }
 });
 
-document.getElementById("messageInput").addEventListener("keypress", function (e) {
+document.getElementById("messageInput").addEventListener("keypress", function(e) {
     if (e.key === "Enter") document.getElementById("sendButton").click();
 });
 
-// Image
-document.getElementById("imageButton").addEventListener("click", function () {
+// ── Image ──
+document.getElementById("imageButton").addEventListener("click", function() {
     document.getElementById("imageInput").click();
 });
 
-document.getElementById("imageInput").addEventListener("change", function (e) {
+document.getElementById("imageInput").addEventListener("change", function(e) {
     const file = e.target.files[0];
     const user = document.getElementById("userInput").value;
     if (!user) { alert("Please enter your name first!"); return; }
-    if (file && file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-            connection.invoke("SendImage", user, event.target.result, file.name).catch(function (err) {
-                return console.error(err.toString());
-            });
-        };
-        reader.readAsDataURL(file);
-        e.target.value = "";
-    }
-});
+    if (!file || !file.type.startsWith("image/")) return;
 
-connection.on("ReceiveImage", function (user, imageData, fileName, timestamp) {
-    const messageDiv = document.createElement("div");
-    messageDiv.className = "message";
-    messageDiv.innerHTML = `
-        <div class="message-content">
-            <div class="message-user">${user}</div>
-            <img src="${imageData}" alt="${fileName}" style="max-width: 300px; border-radius: 8px; margin: 5px 0;" />
-            <div class="message-time">${timestamp}</div>
-        </div>
-    `;
-    document.getElementById("messagesList").appendChild(messageDiv);
-    document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
+    compressImage(file, function(compressedData) {
+        // Send via SignalR to online users
+        connection.invoke("SendImage", user, compressedData, file.name).catch(err => console.error(err));
+        // Save to Firestore for history
+        saveMessage("image", null, compressedData, file.name);
+    });
+    e.target.value = "";
 });
 
 // ── Voice Calls ──
@@ -221,7 +284,7 @@ async function initiateCall(target) {
 }
 
 connection.on("IncomingCall", function(caller) { callTarget = caller; showCallOverlay("Incoming Call", caller, true); });
-connection.on("CallAccepted", async function() { document.getElementById("callStatus").textContent = "Connected"; document.getElementById("acceptCallBtn").style.display = "none"; });
+connection.on("CallAccepted", function() { document.getElementById("callStatus").textContent = "Connected"; document.getElementById("acceptCallBtn").style.display = "none"; });
 connection.on("CallRejected", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } alert("Call was rejected."); });
 connection.on("CallEnded", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } });
 

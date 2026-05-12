@@ -1,119 +1,101 @@
 ================================================================
-LiveChatApp - Full Project Summary
+LiveChatApp - Complete Project Handover Notes
+================================================================
+Built with: ASP.NET Core 9 + SignalR + Firebase + WebRTC
 ================================================================
 
-TECH STACK
-----------
-Backend  : ASP.NET Core 9 + SignalR (real-time)
-Frontend : HTML / CSS / Vanilla JS
-Auth     : Firebase Authentication (email/password)
-Database : Firebase Firestore (projects + users)
-Calls    : WebRTC (peer-to-peer audio)
+----------------------------------------------------------------
+QUICK START (for anyone taking over this project)
+----------------------------------------------------------------
+1. Install .NET 9 SDK from https://dotnet.microsoft.com/download
+2. Install VS Code + C# Dev Kit extension (Microsoft)
+3. Clone the repo:
+     git clone https://github.com/shiva2ziniosedge-gamedev/LiveChatApp-.git
+     git checkout working-backup
+4. Open folder: ASPChatApplication/LiveChatApp in VS Code
+5. Run: dotnet run --project LiveChatApp.csproj
+6. Open browser: http://localhost:5300
 
 ----------------------------------------------------------------
-
-GIT
----
-Repo   : https://github.com/shiva2ziniosedge-gamedev/LiveChatApp-
+GIT REPOSITORY
+----------------------------------------------------------------
+URL    : https://github.com/shiva2ziniosedge-gamedev/LiveChatApp-
 Branch : working-backup  <-- ALL LATEST CODE IS HERE
-main   : old/broken history, ignore it
+         (main branch has old broken history, ignore it)
 
 Local path:
   C:\Users\Admin\Downloads\ASPChatApplication\ASPChatApplication\LiveChatApp
 
-Clone on new machine:
-  git clone https://github.com/shiva2ziniosedge-gamedev/LiveChatApp-.git
-  git checkout working-backup
+Key commits:
+  e5fc92a - working admin and user login without project restriction
+  0c70180 - working team based logins with project isolation
+  bb2a603 - admin done room creation for users Firestore integration
 
 ----------------------------------------------------------------
+TECH STACK
+----------------------------------------------------------------
+Backend  : ASP.NET Core 9
+           - SignalR for real-time messaging
+           - Kestrel web server (built-in)
+           - Port: 5300 (HTTP), 7300 (HTTPS)
 
-FIREBASE
---------
+Frontend : Vanilla HTML + CSS + JavaScript (no frameworks)
+
+Auth     : Firebase Authentication (email/password only)
+           - No self-signup — admin creates all users
+           - Admin verifies UID on login
+
+Database : Firebase Firestore
+           - Stores: projects, users, chat messages, images
+
+Calls    : WebRTC (peer-to-peer audio)
+           - STUN servers: stun.l.google.com:19302
+           - Signaling via SignalR
+
+----------------------------------------------------------------
+FIREBASE PROJECT
+----------------------------------------------------------------
 Project ID   : livechatapp-b5399
 Console      : https://console.firebase.google.com/project/livechatapp-b5399
 Auth domain  : livechatapp-b5399.firebaseapp.com
-Admin email  : shiva2gamedev@gmail.com
-Admin UID    : SZvYG7wbQ9TzgWySvLwVU240reD3
-Services     : Firebase Auth + Firestore
+Storage      : gs://livechatapp-b5399.firebasestorage.app (Spark plan - no file storage)
+
+Admin account:
+  Email : shiva2gamedev@gmail.com
+  UID   : SZvYG7wbQ9TzgWySvLwVU240reD3
+  (This UID is hardcoded in admin.html to restrict dashboard access)
+
+Firebase services used:
+  1. Authentication  - manages user login/logout
+  2. Firestore       - stores projects, users, messages, images
 
 ----------------------------------------------------------------
+FIRESTORE DATA STRUCTURE
+----------------------------------------------------------------
+/projects/{autoId}
+  - name        : "Backend Team"
+  - desc        : "ASP.NET developers"
+  - created     : ISO timestamp
+  - status      : "active"
 
-RUN LOCALLY
------------
-  dotnet run --project LiveChatApp.csproj
-  Open: http://localhost:5300
+/users/{firebaseUID}
+  - name        : "Shiva"
+  - email       : "shiva@test.com"
+  - projectId   : "abc123firestore"
+  - projectName : "Backend Team"
+  - created     : ISO timestamp
 
-Port changed from 5206 to 5300 (in Properties/launchSettings.json)
+/messages/{projectId}/chats/{autoId}
+  - user        : "Shiva"
+  - type        : "text" or "image"
+  - text        : "hello world"  (null for images)
+  - imageData   : "data:image/jpeg;base64,..."  (null for text, compressed to ~150KB)
+  - fileName    : "photo.jpg"  (null for text)
+  - timestamp   : Firestore serverTimestamp
 
 ----------------------------------------------------------------
-
-FILE STRUCTURE
---------------
-LiveChatApp/
-  hubs/
-    ChatHub.cs         - SignalR hub, project-based group rooms
-  wwwroot/
-    home.html          - Landing page (Admin Login / User Login buttons)
-    login.html         - User login only, no signup
-    signup.html        - Disabled, redirects to login.html
-    admin.html         - Admin dashboard (Firestore powered)
-    index.html         - Chat UI
-    chat.js            - SignalR client + WebRTC voice calls
-  Program.cs           - App entry point, SignalR + static files
-  appsettings.json     - App config
-  Properties/
-    launchSettings.json - Port config (5300)
-
+FIRESTORE SECURITY RULES
 ----------------------------------------------------------------
-
-FULL FLOW
----------
-
-1. User opens http://localhost:5300
-   -> home.html shows two buttons: Admin Login / User Login
-
-2. USER LOGIN path:
-   -> login.html
-   -> Firebase Auth (email + password)
-   -> On success: Firestore lookup by Firebase UID
-   -> Gets projectId and projectName assigned by admin
-   -> Redirects to index.html (chat)
-   -> SignalR connects and calls JoinChat(name, projectId)
-   -> User joins SignalR GROUP = projectId
-   -> Can only chat/image/call people in same project
-
-3. ADMIN LOGIN path:
-   -> admin.html
-   -> Firebase Auth, checks UID == admin UID
-   -> Dashboard loads projects and users from Firestore
-
-4. ADMIN DASHBOARD:
-   Create Project -> saved to Firestore /projects collection
-   Create User    -> creates Firebase Auth account (secondary app)
-                  -> saves to Firestore /users/{uid}
-                  -> fields: name, email, projectId, projectName, created
-   Edit User      -> change name or reassign to different project
-   Delete User    -> removes from Firestore
-                     (also manually delete from Firebase Console > Auth)
-
-----------------------------------------------------------------
-
-HOW PROJECT ROOMS WORK
------------------------
-- Each user in Firestore has a projectId field
-- On login, index.html fetches /users/{uid} from Firestore
-- projectId is passed to SignalR: JoinChat(name, projectId)
-- SignalR adds connection to a GROUP named by projectId
-- Messages, images, typing, calls = scoped to that group only
-- Project A users CANNOT see or interact with Project B users
-
-----------------------------------------------------------------
-
-FIRESTORE SETUP (one-time, do this in Firebase Console)
---------------------------------------------------------
-1. Firebase Console -> Firestore Database -> Create database
-2. Paste these security rules:
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -126,20 +108,152 @@ service cloud.firestore {
                   || request.auth.uid == "SZvYG7wbQ9TzgWySvLwVU240reD3";
       allow write: if request.auth.uid == "SZvYG7wbQ9TzgWySvLwVU240reD3";
     }
+    match /messages/{projectId}/chats/{msgId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
 
 ----------------------------------------------------------------
+FILE STRUCTURE
+----------------------------------------------------------------
+LiveChatApp/
+  hubs/
+    ChatHub.cs          - SignalR hub (project-based group rooms)
+  wwwroot/
+    home.html           - Landing page (Admin Login / User Login)
+    login.html          - User login with Firestore project verification
+    signup.html         - Disabled, redirects to login
+    admin.html          - Admin dashboard (Firestore powered)
+    index.html          - Chat UI with Firebase auth + Firestore history
+    chat.js             - SignalR client + WebRTC + Firestore save/load
+  Program.cs            - App entry, SignalR + static files, port 5300
+  appsettings.json      - App config
+  Dockerfile            - Docker container config
+  Properties/
+    launchSettings.json - Port 5300 config
+  PROJECT_SUMMARY.txt   - This file
 
-VS CODE SETUP
--------------
-Extensions needed:
-  - C# Dev Kit (Microsoft)
+----------------------------------------------------------------
+COMPLETE USER FLOW
+----------------------------------------------------------------
 
-Open folder:
-  File -> Open Folder -> ASPChatApplication/LiveChatApp
+1. Open http://localhost:5300
+   -> home.html: two buttons - User Login / Admin Login
 
-Run:
-  dotnet run --project LiveChatApp.csproj
+2. USER LOGIN:
+   -> login.html
+   -> Enter email + password
+   -> Firebase Auth verifies credentials
+   -> Firestore lookup: /users/{uid} -> gets projectId + projectName
+   -> Stored in sessionStorage (clears on tab close = forces re-login)
+   -> Redirects to index.html (chat)
 
+3. CHAT PAGE (index.html):
+   -> Firebase auth check (if not logged in -> back to login)
+   -> Reads projectId from sessionStorage
+   -> SignalR connects to /chatHub
+   -> JoinChat(username, projectId) -> joins SignalR GROUP = projectId
+   -> Loads ALL past messages from Firestore /messages/{projectId}/chats
+   -> User can send text, images, make voice calls
+
+4. ADMIN LOGIN:
+   -> admin.html
+   -> Firebase Auth login
+   -> Checks UID == SZvYG7wbQ9TzgWySvLwVU240reD3 (hardcoded admin UID)
+   -> Dashboard loads projects + users from Firestore
+
+5. ADMIN DASHBOARD:
+   Create Project -> saved to Firestore /projects
+   Create User    -> Firebase Auth account created (secondary app instance)
+                  -> Firestore /users/{uid} saved with projectId
+   Edit User      -> change name or reassign to different project
+   Delete User    -> removes from Firestore
+                     (manually delete from Firebase Console > Auth too)
+
+----------------------------------------------------------------
+PROJECT ROOM ISOLATION (HOW IT WORKS)
+----------------------------------------------------------------
+- Admin assigns each user to a project in Firestore
+- On login: Firestore lookup gets projectId -> stored in sessionStorage
+- On chat load: JoinChat(name, projectId) -> SignalR group = projectId
+- All messages/images/typing scoped to Clients.Group(projectId)
+- Users in different projects CANNOT see each other at all
+- Chat history loaded from Firestore filtered by projectId
+- Tab close -> sessionStorage clears -> next open forces re-login
+
+----------------------------------------------------------------
+SIGNALR (ChatHub.cs)
+----------------------------------------------------------------
+Hub endpoint : /chatHub
+Methods:
+  JoinChat(username, projectId)  - joins SignalR group by projectId
+  SendMessage(user, message)     - broadcasts to group only
+  SendImage(user, data, name)    - broadcasts image to group only
+  UserTyping(user)               - typing indicator to group
+  UserStoppedTyping(user)        - clears typing indicator
+  CallUser(caller, target)       - WebRTC call initiation
+  AcceptCall(caller)             - call accepted
+  RejectCall(caller)             - call rejected
+  EndCall(target)                - call ended
+  SendOffer/Answer/IceCandidate  - WebRTC signaling
+
+----------------------------------------------------------------
+WEBRTC VOICE CALLS
+----------------------------------------------------------------
+- Peer-to-peer audio only (no video)
+- STUN servers used for NAT traversal
+- Signaling (offer/answer/ICE) goes through SignalR
+- Only works between users in the same project group
+- Call button appears next to each online user in sidebar
+
+----------------------------------------------------------------
+DOCKER
+----------------------------------------------------------------
+Dockerfile is included. To build and run:
+
+  docker build -t livechatapp .
+  docker run -p 5300:8080 livechatapp
+
+Note: Docker uses port 8080 internally, mapped to 5300 on host.
+The app reads ASPNETCORE_URLS from environment in production.
+
+----------------------------------------------------------------
+DEPLOYMENT (RENDER)
+----------------------------------------------------------------
+To deploy on Render.com:
+1. Connect GitHub repo
+2. Select branch: working-backup
+3. Root directory: ASPChatApplication/LiveChatApp
+4. Build command: dotnet publish -c Release -o out
+5. Start command: dotnet out/LiveChatApp.dll
+6. Set environment variable: ASPNETCORE_URLS=http://+:10000
+7. Port: 10000 (Render default)
+
+Note: Update launchSettings.json port if needed for production.
+
+----------------------------------------------------------------
+KNOWN LIMITATIONS
+----------------------------------------------------------------
+- Firebase Storage not enabled (Spark plan) - images stored as
+  base64 in Firestore. Large images are compressed to ~150KB.
+- Admin UID is hardcoded in admin.html - change if admin changes.
+- No email notifications.
+- Voice calls work on LAN/same network easily. Cross-network
+  calls may need TURN servers for full reliability.
+- Chat history loads all messages (no pagination) - may be slow
+  for very large histories in future.
+
+----------------------------------------------------------------
+FIREBASE CONFIG (in all HTML files)
+----------------------------------------------------------------
+apiKey            : AIzaSyD77O5jlRji43PruIH9K4uusvFCJQxAbxQ
+authDomain        : livechatapp-b5399.firebaseapp.com
+projectId         : livechatapp-b5399
+storageBucket     : livechatapp-b5399.firebasestorage.app
+messagingSenderId : 738890891030
+appId             : 1:738890891030:web:55fd84416375761f955a37
+
+================================================================
+END OF HANDOVER NOTES
 ================================================================
