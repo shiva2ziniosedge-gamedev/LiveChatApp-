@@ -86,6 +86,13 @@ connection.on("UserStoppedTyping", function (user) {
 connection.start()
     .then(function() {
         document.getElementById("onlineStatus").textContent = "Connected";
+        // Auto-join if userInput already populated (Firebase set it before connection started)
+        const user = document.getElementById("userInput").value;
+        const projectId = window._chatProjectId || "default";
+        if (user && !currentUser) {
+            currentUser = user;
+            connection.invoke("JoinChat", user, projectId);
+        }
     })
     .catch(function (err) {
         document.getElementById("onlineStatus").textContent = "Disconnected";
@@ -96,11 +103,12 @@ connection.start()
 document.getElementById("sendButton").addEventListener("click", function () {
     const user = document.getElementById("userInput").value;
     const message = document.getElementById("messageInput").value;
-    
+    const projectId = window._chatProjectId || "default";
+
     if (user && message) {
         if (!currentUser) {
             currentUser = user;
-            connection.invoke("JoinChat", user);
+            connection.invoke("JoinChat", user, projectId);
             document.getElementById("userInput").disabled = true;
         }
         connection.invoke("SendMessage", user, message).catch(function (err) {

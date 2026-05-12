@@ -557,14 +557,17 @@
             if (!user) {
                 window.location.href = "/login.html";
             } else {
-                user.reload().then(function() {
-                    const freshUser = firebase.auth().currentUser;
-                    const name = freshUser.displayName || freshUser.email;
-                    window.firebaseUser = freshUser;
-                    document.getElementById("userInput").value = name;
-                    document.getElementById("userInput").disabled = true;
-                    document.getElementById("logoutBtn").style.display = "block";
-                });
+                const projectId = sessionStorage.getItem("projectId") || "default";
+                const projectName = sessionStorage.getItem("projectName") || "Chat";
+                const name = sessionStorage.getItem("userName") || user.displayName || user.email;
+
+                window.firebaseUser = user;
+                window._chatProjectId = projectId;
+                window._chatProjectName = projectName;
+                document.getElementById("userInput").value = name;
+                document.getElementById("userInput").disabled = true;
+                document.getElementById("logoutBtn").style.display = "block";
+                document.querySelector(".chat-header h2").textContent = "💬 " + projectName;
             }
         });
     </script>

@@ -4,7 +4,9 @@ namespace LiveChatApp.Hubs
 {
     public class ChatHub : Hub
     {
-        private static Dictionary<string, string> ConnectedUsers = new Dictionary<string, string>();
+        // connectionId -> (username, projectId)
+        private static Dictionary<string, (string Name, string Project)> ConnectedUsers
+            = new Dictionary<string, (string, string)>();
 
         public override async Task OnConnectedAsync()
         {
@@ -13,90 +15,101 @@ namespace LiveChatApp.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var user = ConnectedUsers.FirstOrDefault(x => x.Key == Context.ConnectionId);
-            if (!string.IsNullOrEmpty(user.Value))
+            if (ConnectedUsers.TryGetValue(Context.ConnectionId, out var user))
             {
                 ConnectedUsers.Remove(Context.ConnectionId);
-                await Clients.All.SendAsync("UserLeft", user.Value, ConnectedUsers.Values.ToList());
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, user.Project);
+                var projectUsers = ConnectedUsers
+                    .Where(x => x.Value.Project == user.Project)
+                    .Select(x => x.Value.Name).ToList();
+                await Clients.Group(user.Project).SendAsync("UserLeft", user.Name, projectUsers);
             }
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task JoinChat(string username)
+        public async Task JoinChat(string username, string projectId)
         {
-            ConnectedUsers[Context.ConnectionId] = username;
-            await Clients.All.SendAsync("UserJoined", username, ConnectedUsers.Values.ToList());
+            ConnectedUsers[Context.ConnectionId] = (username, projectId);
+            await Groups.AddToGroupAsync(Context.ConnectionId, projectId);
+            var projectUsers = ConnectedUsers
+                .Where(x => x.Value.Project == projectId)
+                .Select(x => x.Value.Name).ToList();
+            await Clients.Group(projectId).SendAsync("UserJoined", username, projectUsers);
         }
 
         public async Task SendMessage(string user, string message)
         {
+            if (!ConnectedUsers.TryGetValue(Context.ConnectionId, out var info)) return;
             var timestamp = DateTime.Now.ToString("HH:mm");
-            await Clients.All.SendAsync("ReceiveMessage", user, message, timestamp);
+            await Clients.Group(info.Project).SendAsync("ReceiveMessage", user, message, timestamp);
         }
 
         public async Task UserTyping(string user)
         {
-            await Clients.Others.SendAsync("UserIsTyping", user);
+            if (!ConnectedUsers.TryGetValue(Context.ConnectionId, out var info)) return;
+            await Clients.OthersInGroup(info.Project).SendAsync("UserIsTyping", user);
         }
 
         public async Task UserStoppedTyping(string user)
         {
-            await Clients.Others.SendAsync("UserStoppedTyping", user);
+            if (!ConnectedUsers.TryGetValue(Context.ConnectionId, out var info)) return;
+            await Clients.OthersInGroup(info.Project).SendAsync("UserStoppedTyping", user);
         }
 
         public async Task SendImage(string user, string imageData, string fileName)
         {
+            if (!ConnectedUsers.TryGetValue(Context.ConnectionId, out var info)) return;
             var timestamp = DateTime.Now.ToString("HH:mm");
-            await Clients.All.SendAsync("ReceiveImage", user, imageData, fileName, timestamp);
+            await Clients.Group(info.Project).SendAsync("ReceiveImage", user, imageData, fileName, timestamp);
         }
 
         public async Task CallUser(string caller, string target)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("IncomingCall", caller);
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("IncomingCall", caller);
         }
 
         public async Task AcceptCall(string caller)
         {
-            var callerConnection = ConnectedUsers.FirstOrDefault(x => x.Value == caller);
-            if (!string.IsNullOrEmpty(callerConnection.Key))
-                await Clients.Client(callerConnection.Key).SendAsync("CallAccepted", ConnectedUsers[Context.ConnectionId]);
+            var callerConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == caller);
+            if (!string.IsNullOrEmpty(callerConn.Key))
+                await Clients.Client(callerConn.Key).SendAsync("CallAccepted", ConnectedUsers[Context.ConnectionId].Name);
         }
 
         public async Task RejectCall(string caller)
         {
-            var callerConnection = ConnectedUsers.FirstOrDefault(x => x.Value == caller);
-            if (!string.IsNullOrEmpty(callerConnection.Key))
-                await Clients.Client(callerConnection.Key).SendAsync("CallRejected");
+            var callerConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == caller);
+            if (!string.IsNullOrEmpty(callerConn.Key))
+                await Clients.Client(callerConn.Key).SendAsync("CallRejected");
         }
 
         public async Task EndCall(string target)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("CallEnded");
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("CallEnded");
         }
 
         public async Task SendOffer(string target, string offer)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("ReceiveOffer", offer);
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("ReceiveOffer", offer);
         }
 
         public async Task SendAnswer(string target, string answer)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("ReceiveAnswer", answer);
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("ReceiveAnswer", answer);
         }
 
         public async Task SendIceCandidate(string target, string candidate)
         {
-            var targetConnection = ConnectedUsers.FirstOrDefault(x => x.Value == target);
-            if (!string.IsNullOrEmpty(targetConnection.Key))
-                await Clients.Client(targetConnection.Key).SendAsync("ReceiveIceCandidate", candidate);
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("ReceiveIceCandidate", candidate);
         }
     }
 }
