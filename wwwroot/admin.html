@@ -127,9 +127,20 @@
         .btn-action:hover { opacity: 0.8; }
         .btn-edit { background: rgba(100,149,237,0.2); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
         .btn-delete { background: rgba(233,30,74,0.2); color: #ff6b8a; border: 1px solid rgba(233,30,74,0.3); }
+
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: rgba(0,229,160,0.15); border: 1px solid rgba(0,229,160,0.4);
+            color: #00e5a0; padding: 12px 24px; border-radius: 12px;
+            font-size: 14px; font-weight: 600; backdrop-filter: blur(10px);
+            opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 9999;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
+<div class="toast" id="toast"></div>
 
     <div id="loginScreen">
         <div class="login-card">
@@ -289,6 +300,13 @@
             document.getElementById(id).classList.add("active");
         }
         function closeModal(id) { document.getElementById(id).classList.remove("active"); }
+
+        function showToast(msg) {
+            const t = document.getElementById("toast");
+            t.textContent = msg;
+            t.classList.add("show");
+            setTimeout(() => t.classList.remove("show"), 3000);
+        }
         document.querySelectorAll(".modal-overlay").forEach(el => {
             el.addEventListener("click", e => { if (e.target === el) closeModal(el.id); });
         });
@@ -371,7 +389,7 @@
                 document.getElementById("newUserProject").value = "";
                 closeModal("userModal");
                 await loadUsers();
-                alert(`✅ User "${name}" created!\nEmail: ${email}\nProject: ${projectName}`);
+                showToast(`✅ User "${name}" created successfully`);
             } catch (e) {
                 alert("Error: " + e.message);
             } finally {
