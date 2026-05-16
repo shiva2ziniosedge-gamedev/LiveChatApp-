@@ -13,9 +13,7 @@
             background-attachment: fixed;
         }
         body::before {
-            content: '';
-            position: fixed;
-            bottom: 0; left: 0; right: 0; height: 45%;
+            content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 45%;
             background: linear-gradient(180deg, transparent 0%, #2d1b4e 100%);
             clip-path: polygon(0% 60%, 8% 40%, 15% 50%, 22% 30%, 30% 45%, 38% 20%, 45% 35%, 52% 15%, 60% 30%, 68% 10%, 75% 25%, 82% 5%, 90% 20%, 95% 10%, 100% 15%, 100% 100%, 0% 100%);
             z-index: 0; opacity: 0.8;
@@ -72,18 +70,34 @@
         }
         .btn-logout:hover { background: rgba(255,255,255,0.2); }
         .dashboard-body { padding: 28px; max-width: 1100px; margin: 0 auto; }
-        .actions-row { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
-        .action-card {
-            flex: 1; min-width: 200px; background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 16px; padding: 24px; cursor: pointer;
-            transition: transform 0.15s, background 0.2s; text-align: center;
+
+        /* ── Tabs ── */
+        .tabs-bar {
+            display: flex; gap: 4px; margin-bottom: 24px;
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 5px;
+            width: fit-content;
         }
-        .action-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.13); }
-        .action-card .icon { font-size: 36px; margin-bottom: 12px; }
-        .action-card h3 { color: white; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-        .action-card p { color: rgba(255,255,255,0.5); font-size: 13px; }
-        .section-title { color: white; font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+        .tab-btn {
+            padding: 9px 22px; border-radius: 9px; border: none; cursor: pointer;
+            font-size: 14px; font-weight: 600; transition: background 0.2s, color 0.2s;
+            background: transparent; color: rgba(255,255,255,0.5);
+        }
+        .tab-btn.active { background: #e91e8c; color: white; box-shadow: 0 2px 10px rgba(233,30,140,0.4); }
+        .tab-btn:not(.active):hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Tab panel header row ── */
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .section-title { color: white; font-size: 18px; font-weight: 700; }
+        .btn-add {
+            padding: 9px 18px; background: #e91e8c; color: white;
+            border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+            box-shadow: 0 2px 10px rgba(233,30,140,0.35);
+        }
+        .btn-add:hover { background: #c2185b; }
+
         .table-card {
             background: rgba(255,255,255,0.06); backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; overflow: hidden;
@@ -91,11 +105,14 @@
         table { width: 100%; border-collapse: collapse; }
         thead tr { background: rgba(0,0,0,0.2); }
         th { padding: 14px 18px; text-align: left; color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        td { padding: 14px 18px; color: rgba(255,255,255,0.85); font-size: 14px; border-top: 1px solid rgba(255,255,255,0.07); }
+        td { padding: 14px 18px; color: rgba(255,255,255,0.85); font-size: 14px; border-top: 1px solid rgba(255,255,255,0.07); vertical-align: middle; }
         tr:hover td { background: rgba(255,255,255,0.04); }
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 2px 2px; }
         .badge-active { background: rgba(0,229,160,0.15); color: #00e5a0; border: 1px solid rgba(0,229,160,0.3); }
+        .badge-project { background: rgba(100,149,237,0.15); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
         .empty-state { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); font-size: 14px; }
+
+        /* ── Modals ── */
         .modal-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
@@ -104,7 +121,7 @@
         .modal-overlay.active { display: flex; }
         .modal {
             background: rgba(20,12,45,0.97); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 20px; padding: 36px; width: 100%; max-width: 420px;
+            border-radius: 20px; padding: 36px; width: 100%; max-width: 440px;
             box-shadow: 0 25px 60px rgba(0,0,0,0.6);
         }
         .modal h3 { color: white; font-size: 20px; font-weight: 700; margin-bottom: 20px; }
@@ -123,10 +140,30 @@
         }
         .btn-submit:hover { background: #c2185b; }
         .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-action { padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+        .btn-action { padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; border: none; }
         .btn-action:hover { opacity: 0.8; }
-        .btn-edit { background: rgba(100,149,237,0.2); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
-        .btn-delete { background: rgba(233,30,74,0.2); color: #ff6b8a; border: 1px solid rgba(233,30,74,0.3); }
+        .btn-edit { background: rgba(100,149,237,0.2); color: #6495ed; border: 1px solid rgba(100,149,237,0.3) !important; }
+        .btn-delete { background: rgba(233,30,74,0.2); color: #ff6b8a; border: 1px solid rgba(233,30,74,0.3) !important; }
+
+        /* ── Multi-project checkboxes ── */
+        .project-checklist {
+            max-height: 180px; overflow-y: auto;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px; padding: 8px; margin-bottom: 14px;
+        }
+        .project-checklist::-webkit-scrollbar { width: 4px; }
+        .project-checklist::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+        .check-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; border-radius: 8px; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .check-item:hover { background: rgba(255,255,255,0.07); }
+        .check-item input[type="checkbox"] {
+            width: 16px; height: 16px; margin: 0; padding: 0;
+            accent-color: #e91e8c; cursor: pointer;
+        }
+        .check-item span { color: rgba(255,255,255,0.85); font-size: 14px; }
 
         .toast {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -142,313 +179,386 @@
 <body>
 <div class="toast" id="toast"></div>
 
-    <div id="loginScreen">
-        <div class="login-card">
-            <h2>🛡️ Admin Login</h2>
-            <p class="subtitle">Sign in with your admin account</p>
-            <div class="error-msg" id="errorMsg"></div>
-            <input type="email" id="adminEmail" placeholder="Admin email" />
-            <input type="password" id="adminPassword" placeholder="Password" />
-            <button class="btn-primary" id="loginBtn" onclick="adminLogin()">Login</button>
-            <div class="back-link"><a href="/home.html">← Back to home</a></div>
-        </div>
+<div id="loginScreen">
+    <div class="login-card">
+        <h2>🛡️ Admin Login</h2>
+        <p class="subtitle">Sign in with your admin account</p>
+        <div class="error-msg" id="errorMsg"></div>
+        <input type="email" id="adminEmail" placeholder="Admin email" />
+        <input type="password" id="adminPassword" placeholder="Password" />
+        <button class="btn-primary" id="loginBtn" onclick="adminLogin()">Login</button>
+        <div class="back-link"><a href="/home.html">← Back to home</a></div>
     </div>
+</div>
 
-    <div id="dashboard">
-        <div class="topbar">
-            <div>
-                <h1>🛡️ Admin Panel</h1>
-                <span id="adminName"></span>
-            </div>
-            <button class="btn-logout" onclick="logout()">Logout</button>
+<div id="dashboard">
+    <div class="topbar">
+        <div>
+            <h1>🛡️ Admin Panel</h1>
+            <span id="adminName"></span>
         </div>
-        <div class="dashboard-body">
-            <div class="actions-row">
-                <div class="action-card" onclick="openModal('projectModal')">
-                    <div class="icon">📁</div>
-                    <h3>Create Project</h3>
-                    <p>Add a new chat project</p>
-                </div>
-                <div class="action-card" onclick="openModal('userModal')">
-                    <div class="icon">👤</div>
-                    <h3>Create User</h3>
-                    <p>Add a new user account</p>
-                </div>
-            </div>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+    <div class="dashboard-body">
 
-            <div class="section-title">Projects</div>
+        <!-- Browser-style tabs -->
+        <div class="tabs-bar">
+            <button class="tab-btn active" onclick="switchTab('projects')">📁 Projects</button>
+            <button class="tab-btn" onclick="switchTab('users')">👤 Users</button>
+        </div>
+
+        <!-- Projects Tab -->
+        <div class="tab-panel active" id="tab-projects">
+            <div class="panel-header">
+                <div class="section-title">Projects</div>
+                <button class="btn-add" onclick="openModal('projectModal')">+ New Project</button>
+            </div>
             <div class="table-card">
                 <table>
                     <thead><tr><th>Project Name</th><th>Description</th><th>Created</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody id="projectsTableBody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
                 </table>
             </div>
+        </div>
 
-            <div class="section-title" style="margin-top:32px;">Users</div>
+        <!-- Users Tab -->
+        <div class="tab-panel" id="tab-users">
+            <div class="panel-header">
+                <div class="section-title">Users</div>
+                <button class="btn-add" onclick="openModal('userModal')">+ New User</button>
+            </div>
             <div class="table-card">
                 <table>
-                    <thead><tr><th>Name</th><th>Email</th><th>Project</th><th>Created</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Email</th><th>Projects</th><th>Created</th><th>Actions</th></tr></thead>
                     <tbody id="usersTableBody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- Create Project Modal -->
-    <div class="modal-overlay" id="projectModal">
-        <div class="modal">
-            <h3>📁 Create Project</h3>
-            <label>Project Name</label>
-            <input type="text" id="projectName" placeholder="e.g. Support Chat" />
-            <label>Description</label>
-            <input type="text" id="projectDesc" placeholder="Short description" />
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal('projectModal')">Cancel</button>
-                <button class="btn-submit" onclick="createProject()">Create</button>
-            </div>
+    </div>
+</div>
+
+<!-- Create Project Modal -->
+<div class="modal-overlay" id="projectModal">
+    <div class="modal">
+        <h3>📁 Create Project</h3>
+        <label>Project Name</label>
+        <input type="text" id="projectName" placeholder="e.g. Support Chat" />
+        <label>Description</label>
+        <input type="text" id="projectDesc" placeholder="Short description" />
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('projectModal')">Cancel</button>
+            <button class="btn-submit" onclick="createProject()">Create</button>
         </div>
     </div>
+</div>
 
-    <!-- Create User Modal -->
-    <div class="modal-overlay" id="userModal">
-        <div class="modal">
-            <h3>👤 Create User</h3>
-            <label>Display Name</label>
-            <input type="text" id="newUserName" placeholder="Full name" />
-            <label>Email</label>
-            <input type="email" id="newUserEmail" placeholder="user@example.com" />
-            <label>Password</label>
-            <input type="password" id="newUserPassword" placeholder="Min 6 characters" />
-            <label>Project</label>
-            <select id="newUserProject"><option value="">— Select a project —</option></select>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal('userModal')">Cancel</button>
-                <button class="btn-submit" id="createUserBtn" onclick="createUser()">Create</button>
-            </div>
+<!-- Edit Project Modal -->
+<div class="modal-overlay" id="editProjectModal">
+    <div class="modal">
+        <h3>✏️ Edit Project</h3>
+        <input type="hidden" id="editProjectId" />
+        <label>Project Name</label>
+        <input type="text" id="editProjectName" placeholder="Project name" />
+        <label>Description</label>
+        <input type="text" id="editProjectDesc" placeholder="Short description" />
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('editProjectModal')">Cancel</button>
+            <button class="btn-submit" onclick="saveEditProject()">Save</button>
         </div>
     </div>
+</div>
 
-    <!-- Edit User Modal -->
-    <div class="modal-overlay" id="editUserModal">
-        <div class="modal">
-            <h3>✏️ Edit User</h3>
-            <input type="hidden" id="editUserId" />
-            <label>Display Name</label>
-            <input type="text" id="editUserName" placeholder="Full name" />
-            <label>Project</label>
-            <select id="editUserProject"><option value="">— Select a project —</option></select>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal('editUserModal')">Cancel</button>
-                <button class="btn-submit" onclick="saveEditUser()">Save</button>
-            </div>
+<!-- Create User Modal -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal">
+        <h3>👤 Create User</h3>
+        <label>Display Name</label>
+        <input type="text" id="newUserName" placeholder="Full name" />
+        <label>Email</label>
+        <input type="email" id="newUserEmail" placeholder="user@example.com" />
+        <label>Password</label>
+        <input type="password" id="newUserPassword" placeholder="Min 6 characters" />
+        <label>Projects (select one or more)</label>
+        <div class="project-checklist" id="newUserProjectList"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('userModal')">Cancel</button>
+            <button class="btn-submit" id="createUserBtn" onclick="createUser()">Create</button>
         </div>
     </div>
+</div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyD77O5jlRji43PruIH9K4uusvFCJQxAbxQ",
-            authDomain: "livechatapp-b5399.firebaseapp.com",
-            projectId: "livechatapp-b5399",
-            storageBucket: "livechatapp-b5399.firebasestorage.app",
-            messagingSenderId: "738890891030",
-            appId: "1:738890891030:web:55fd84416375761f955a37"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const secondaryApp = firebase.initializeApp(firebaseConfig, "secondary");
-        const db = firebase.firestore();
-        const ADMIN_UID = "SZvYG7wbQ9TzgWySvLwVU240reD3";
+<!-- Edit User Modal -->
+<div class="modal-overlay" id="editUserModal">
+    <div class="modal">
+        <h3>✏️ Edit User</h3>
+        <input type="hidden" id="editUserId" />
+        <label>Display Name</label>
+        <input type="text" id="editUserName" placeholder="Full name" />
+        <label>Projects (select one or more)</label>
+        <div class="project-checklist" id="editUserProjectList"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('editUserModal')">Cancel</button>
+            <button class="btn-submit" onclick="saveEditUser()">Save</button>
+        </div>
+    </div>
+</div>
 
-        let projects = [];
-        let users = [];
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyD77O5jlRji43PruIH9K4uusvFCJQxAbxQ",
+        authDomain: "livechatapp-b5399.firebaseapp.com",
+        projectId: "livechatapp-b5399",
+        storageBucket: "livechatapp-b5399.firebasestorage.app",
+        messagingSenderId: "738890891030",
+        appId: "1:738890891030:web:55fd84416375761f955a37"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const secondaryApp = firebase.initializeApp(firebaseConfig, "secondary");
+    const db = firebase.firestore();
+    const ADMIN_UID = "SZvYG7wbQ9TzgWySvLwVU240reD3";
 
-        firebase.auth().onAuthStateChanged(async function(user) {
-            if (user && user.uid === ADMIN_UID) {
-                document.getElementById("loginScreen").style.display = "none";
-                document.getElementById("dashboard").style.display = "block";
-                document.getElementById("adminName").textContent = user.displayName || user.email;
-                await loadProjects();
-                await loadUsers();
-            }
-        });
+    let projects = [];
+    let users = [];
 
-        async function adminLogin() {
-            const email = document.getElementById("adminEmail").value.trim();
-            const password = document.getElementById("adminPassword").value;
-            const btn = document.getElementById("loginBtn");
-            if (!email || !password) { showError("Please fill in all fields"); return; }
-            btn.disabled = true; btn.textContent = "Logging in..."; hideError();
-            try {
-                const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-                if (cred.user.uid !== ADMIN_UID) {
-                    await firebase.auth().signOut();
-                    showError("Access denied. Not an admin account.");
-                    btn.disabled = false; btn.textContent = "Login";
-                }
-            } catch (e) {
-                showError(getErrMsg(e.code));
+    // ── Tab switching ──
+    function switchTab(name) {
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.getElementById("tab-" + name).classList.add("active");
+        event.currentTarget.classList.add("active");
+    }
+
+    firebase.auth().onAuthStateChanged(async function(user) {
+        if (user && user.uid === ADMIN_UID) {
+            document.getElementById("loginScreen").style.display = "none";
+            document.getElementById("dashboard").style.display = "block";
+            document.getElementById("adminName").textContent = user.displayName || user.email;
+            await loadProjects();
+            await loadUsers();
+        }
+    });
+
+    async function adminLogin() {
+        const email = document.getElementById("adminEmail").value.trim();
+        const password = document.getElementById("adminPassword").value;
+        const btn = document.getElementById("loginBtn");
+        if (!email || !password) { showError("Please fill in all fields"); return; }
+        btn.disabled = true; btn.textContent = "Logging in..."; hideError();
+        try {
+            const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+            if (cred.user.uid !== ADMIN_UID) {
+                await firebase.auth().signOut();
+                showError("Access denied. Not an admin account.");
                 btn.disabled = false; btn.textContent = "Login";
             }
+        } catch (e) {
+            showError(getErrMsg(e.code));
+            btn.disabled = false; btn.textContent = "Login";
         }
+    }
 
-        function logout() { firebase.auth().signOut().then(() => window.location.href = "/home.html"); }
+    function logout() { firebase.auth().signOut().then(() => window.location.href = "/home.html"); }
 
-        function openModal(id) {
-            if (id === "userModal") fillDropdown("newUserProject", null);
-            document.getElementById(id).classList.add("active");
-        }
-        function closeModal(id) { document.getElementById(id).classList.remove("active"); }
+    function openModal(id) {
+        if (id === "userModal") fillChecklist("newUserProjectList", []);
+        document.getElementById(id).classList.add("active");
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove("active"); }
 
-        function showToast(msg) {
-            const t = document.getElementById("toast");
-            t.textContent = msg;
-            t.classList.add("show");
-            setTimeout(() => t.classList.remove("show"), 3000);
-        }
-        document.querySelectorAll(".modal-overlay").forEach(el => {
-            el.addEventListener("click", e => { if (e.target === el) closeModal(el.id); });
-        });
+    function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 3000);
+    }
+    document.querySelectorAll(".modal-overlay").forEach(el => {
+        el.addEventListener("click", e => { if (e.target === el) closeModal(el.id); });
+    });
 
-        function fillDropdown(selectId, selectedId) {
-            const sel = document.getElementById(selectId);
-            sel.innerHTML = '<option value="">— Select a project —</option>';
-            projects.forEach(p => {
-                const o = document.createElement("option");
-                o.value = p.id; o.textContent = p.name;
-                if (p.id === selectedId) o.selected = true;
-                sel.appendChild(o);
+    // ── Multi-project checklist ──
+    function fillChecklist(containerId, selectedIds) {
+        const container = document.getElementById(containerId);
+        if (!projects.length) { container.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:10px;font-size:13px;">No projects available</div>'; return; }
+        container.innerHTML = projects.map(p => `
+            <label class="check-item">
+                <input type="checkbox" value="${p.id}" ${selectedIds.includes(p.id) ? "checked" : ""} />
+                <span>${p.name}</span>
+            </label>`).join("");
+    }
+
+    function getCheckedProjects(containerId) {
+        return Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`))
+            .map(cb => ({ id: cb.value, name: projects.find(p => p.id === cb.value)?.name || cb.value }));
+    }
+
+    // ── Projects ──
+    async function loadProjects() {
+        const snap = await db.collection("projects").orderBy("created", "desc").get();
+        projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderProjects();
+    }
+
+    async function createProject() {
+        const name = document.getElementById("projectName").value.trim();
+        const desc = document.getElementById("projectDesc").value.trim();
+        if (!name) { alert("Project name is required"); return; }
+        await db.collection("projects").add({ name, desc, created: new Date().toISOString(), status: "active" });
+        document.getElementById("projectName").value = "";
+        document.getElementById("projectDesc").value = "";
+        closeModal("projectModal");
+        await loadProjects();
+        showToast("✅ Project created");
+    }
+
+    function editProject(id) {
+        const p = projects.find(x => x.id === id);
+        if (!p) return;
+        document.getElementById("editProjectId").value = id;
+        document.getElementById("editProjectName").value = p.name;
+        document.getElementById("editProjectDesc").value = p.desc || "";
+        document.getElementById("editProjectModal").classList.add("active");
+    }
+
+    async function saveEditProject() {
+        const id = document.getElementById("editProjectId").value;
+        const name = document.getElementById("editProjectName").value.trim();
+        const desc = document.getElementById("editProjectDesc").value.trim();
+        if (!name) { alert("Project name is required"); return; }
+        await db.collection("projects").doc(id).update({ name, desc });
+        closeModal("editProjectModal");
+        await loadProjects();
+        showToast("✅ Project updated");
+    }
+
+    async function deleteProject(id) {
+        if (!confirm("Delete this project?")) return;
+        await db.collection("projects").doc(id).delete();
+        await loadProjects();
+    }
+
+    function renderProjects() {
+        const tbody = document.getElementById("projectsTableBody");
+        if (!projects.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No projects yet.</td></tr>`; return; }
+        tbody.innerHTML = projects.map(p => `<tr>
+            <td>${p.name}</td><td>${p.desc || "—"}</td>
+            <td>${new Date(p.created).toLocaleDateString()}</td>
+            <td><span class="badge badge-active">${p.status}</span></td>
+            <td style="display:flex;gap:6px;">
+                <button class="btn-action btn-edit" onclick="editProject('${p.id}')">Edit</button>
+                <button class="btn-action btn-delete" onclick="deleteProject('${p.id}')">Delete</button>
+            </td>
+        </tr>`).join("");
+    }
+
+    // ── Users ──
+    async function loadUsers() {
+        const snap = await db.collection("users").orderBy("created", "desc").get();
+        users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderUsers();
+    }
+
+    async function createUser() {
+        const name = document.getElementById("newUserName").value.trim();
+        const email = document.getElementById("newUserEmail").value.trim();
+        const password = document.getElementById("newUserPassword").value;
+        const selectedProjects = getCheckedProjects("newUserProjectList");
+        const btn = document.getElementById("createUserBtn");
+        if (!name || !email || !password) { alert("All fields are required"); return; }
+        if (!selectedProjects.length) { alert("Please select at least one project"); return; }
+        if (password.length < 6) { alert("Password must be at least 6 characters"); return; }
+        btn.disabled = true; btn.textContent = "Creating...";
+        try {
+            const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+            await cred.user.updateProfile({ displayName: name });
+            await secondaryApp.auth().signOut();
+            // Store array of projects; keep projectId/projectName as first project for backward compat
+            await db.collection("users").doc(cred.user.uid).set({
+                name, email,
+                projectId: selectedProjects[0].id,
+                projectName: selectedProjects[0].name,
+                projects: selectedProjects,
+                created: new Date().toISOString()
             });
-        }
-
-        // ── Projects ──
-        async function loadProjects() {
-            const snap = await db.collection("projects").orderBy("created", "desc").get();
-            projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderProjects();
-        }
-
-        async function createProject() {
-            const name = document.getElementById("projectName").value.trim();
-            const desc = document.getElementById("projectDesc").value.trim();
-            if (!name) { alert("Project name is required"); return; }
-            await db.collection("projects").add({ name, desc, created: new Date().toISOString(), status: "active" });
-            document.getElementById("projectName").value = "";
-            document.getElementById("projectDesc").value = "";
-            closeModal("projectModal");
-            await loadProjects();
-        }
-
-        async function deleteProject(id) {
-            if (!confirm("Delete this project?")) return;
-            await db.collection("projects").doc(id).delete();
-            await loadProjects();
-        }
-
-        function renderProjects() {
-            const tbody = document.getElementById("projectsTableBody");
-            if (!projects.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No projects yet.</td></tr>`; return; }
-            tbody.innerHTML = projects.map(p => `<tr>
-                <td>${p.name}</td><td>${p.desc || "—"}</td>
-                <td>${new Date(p.created).toLocaleDateString()}</td>
-                <td><span class="badge badge-active">${p.status}</span></td>
-                <td><button class="btn-action btn-delete" onclick="deleteProject('${p.id}')">Delete</button></td>
-            </tr>`).join("");
-        }
-
-        // ── Users ──
-        async function loadUsers() {
-            const snap = await db.collection("users").orderBy("created", "desc").get();
-            users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderUsers();
-        }
-
-        async function createUser() {
-            const name = document.getElementById("newUserName").value.trim();
-            const email = document.getElementById("newUserEmail").value.trim();
-            const password = document.getElementById("newUserPassword").value;
-            const projectId = document.getElementById("newUserProject").value;
-            const btn = document.getElementById("createUserBtn");
-            if (!name || !email || !password) { alert("All fields are required"); return; }
-            if (!projectId) { alert("Please select a project"); return; }
-            if (password.length < 6) { alert("Password must be at least 6 characters"); return; }
-            const proj = projects.find(p => p.id === projectId);
-            const projectName = proj ? proj.name : projectId;
-            btn.disabled = true; btn.textContent = "Creating...";
-            try {
-                const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
-                await cred.user.updateProfile({ displayName: name });
-                await secondaryApp.auth().signOut();
-                await db.collection("users").doc(cred.user.uid).set({
-                    name, email, projectId, projectName, created: new Date().toISOString()
-                });
-                document.getElementById("newUserName").value = "";
-                document.getElementById("newUserEmail").value = "";
-                document.getElementById("newUserPassword").value = "";
-                document.getElementById("newUserProject").value = "";
-                closeModal("userModal");
-                await loadUsers();
-                showToast(`✅ User "${name}" created successfully`);
-            } catch (e) {
-                alert("Error: " + e.message);
-            } finally {
-                btn.disabled = false; btn.textContent = "Create";
-            }
-        }
-
-        function editUser(uid) {
-            const u = users.find(x => x.id === uid);
-            if (!u) return;
-            document.getElementById("editUserId").value = uid;
-            document.getElementById("editUserName").value = u.name;
-            fillDropdown("editUserProject", u.projectId);
-            document.getElementById("editUserModal").classList.add("active");
-        }
-
-        async function saveEditUser() {
-            const uid = document.getElementById("editUserId").value;
-            const name = document.getElementById("editUserName").value.trim();
-            const projectId = document.getElementById("editUserProject").value;
-            if (!name || !projectId) { alert("All fields required"); return; }
-            const proj = projects.find(p => p.id === projectId);
-            const projectName = proj ? proj.name : projectId;
-            await db.collection("users").doc(uid).update({ name, projectId, projectName });
+            document.getElementById("newUserName").value = "";
+            document.getElementById("newUserEmail").value = "";
+            document.getElementById("newUserPassword").value = "";
+            closeModal("userModal");
             await loadUsers();
-            closeModal("editUserModal");
+            showToast(`✅ User "${name}" created`);
+        } catch (e) {
+            alert("Error: " + e.message);
+        } finally {
+            btn.disabled = false; btn.textContent = "Create";
         }
+    }
 
-        async function deleteUser(uid, name) {
-            if (!confirm(`Remove "${name}"?\n\nAlso delete from Firebase Console > Authentication to revoke login.`)) return;
-            await db.collection("users").doc(uid).delete();
-            await loadUsers();
-        }
+    function editUser(uid) {
+        const u = users.find(x => x.id === uid);
+        if (!u) return;
+        document.getElementById("editUserId").value = uid;
+        document.getElementById("editUserName").value = u.name;
+        const selectedIds = u.projects ? u.projects.map(p => p.id) : (u.projectId ? [u.projectId] : []);
+        fillChecklist("editUserProjectList", selectedIds);
+        document.getElementById("editUserModal").classList.add("active");
+    }
 
-        function renderUsers() {
-            const tbody = document.getElementById("usersTableBody");
-            if (!users.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No users yet.</td></tr>`; return; }
-            tbody.innerHTML = users.map(u => `<tr>
+    async function saveEditUser() {
+        const uid = document.getElementById("editUserId").value;
+        const name = document.getElementById("editUserName").value.trim();
+        const selectedProjects = getCheckedProjects("editUserProjectList");
+        if (!name) { alert("Name is required"); return; }
+        if (!selectedProjects.length) { alert("Select at least one project"); return; }
+        await db.collection("users").doc(uid).update({
+            name,
+            projectId: selectedProjects[0].id,
+            projectName: selectedProjects[0].name,
+            projects: selectedProjects
+        });
+        await loadUsers();
+        closeModal("editUserModal");
+        showToast("✅ User updated");
+    }
+
+    async function deleteUser(uid, name) {
+        if (!confirm(`Remove "${name}"?\n\nAlso delete from Firebase Console > Authentication to revoke login.`)) return;
+        await db.collection("users").doc(uid).delete();
+        await loadUsers();
+    }
+
+    function renderUsers() {
+        const tbody = document.getElementById("usersTableBody");
+        if (!users.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No users yet.</td></tr>`; return; }
+        tbody.innerHTML = users.map(u => {
+            const projectList = u.projects && u.projects.length
+                ? u.projects.map(p => `<span class="badge badge-project">${p.name}</span>`).join("")
+                : `<span class="badge badge-project">${u.projectName || u.projectId}</span>`;
+            return `<tr>
                 <td>${u.name}</td><td>${u.email}</td>
-                <td><span class="badge badge-active">${u.projectName || u.projectId}</span></td>
+                <td>${projectList}</td>
                 <td>${new Date(u.created).toLocaleDateString()}</td>
                 <td style="display:flex;gap:6px;">
                     <button class="btn-action btn-edit" onclick="editUser('${u.id}')">Edit</button>
                     <button class="btn-action btn-delete" onclick="deleteUser('${u.id}','${u.name}')">Delete</button>
                 </td>
-            </tr>`).join("");
-        }
+            </tr>`;
+        }).join("");
+    }
 
-        function showError(msg) { const el = document.getElementById("errorMsg"); el.textContent = msg; el.style.display = "block"; }
-        function hideError() { document.getElementById("errorMsg").style.display = "none"; }
-        function getErrMsg(code) {
-            switch(code) {
-                case "auth/user-not-found": return "No account found with this email";
-                case "auth/wrong-password": case "auth/invalid-credential": case "auth/invalid-login-credentials": return "Incorrect email or password";
-                case "auth/too-many-requests": return "Too many attempts. Try again later";
-                default: return "Login failed. Please try again";
-            }
+    function showError(msg) { const el = document.getElementById("errorMsg"); el.textContent = msg; el.style.display = "block"; }
+    function hideError() { document.getElementById("errorMsg").style.display = "none"; }
+    function getErrMsg(code) {
+        switch(code) {
+            case "auth/user-not-found": return "No account found with this email";
+            case "auth/wrong-password": case "auth/invalid-credential": case "auth/invalid-login-credentials": return "Incorrect email or password";
+            case "auth/too-many-requests": return "Too many attempts. Try again later";
+            default: return "Login failed. Please try again";
         }
-        document.getElementById("adminPassword").addEventListener("keypress", e => { if (e.key === "Enter") adminLogin(); });
-    </script>
+    }
+    document.getElementById("adminPassword").addEventListener("keypress", e => { if (e.key === "Enter") adminLogin(); });
+</script>
 </body>
 </html>

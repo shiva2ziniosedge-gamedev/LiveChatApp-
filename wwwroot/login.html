@@ -51,6 +51,15 @@
         .switch { text-align: center; margin-top: 20px; color: rgba(255,255,255,0.5); font-size: 14px; }
         .switch a { color: #e91e8c; text-decoration: none; font-weight: 600; }
         .switch a:hover { text-decoration: underline; }
+        select {
+            width: 100%; padding: 12px 16px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px; font-size: 14px; color: white; outline: none;
+            margin-bottom: 14px; cursor: pointer; appearance: none;
+        }
+        select option { background: #1a1a2e; color: white; }
+        select:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
+        #projectPickerRow { display: none; }
     </style>
 </head>
 <body>
@@ -60,6 +69,9 @@
         <div class="error" id="errorMsg"></div>
         <input type="email" id="email" placeholder="Email address" />
         <input type="password" id="password" placeholder="Password" />
+        <div id="projectPickerRow">
+            <select id="projectPicker"></select>
+        </div>
         <button class="btn" id="loginBtn" onclick="login()">Login</button>
         <div class="switch">
             Contact your admin to get an account.
@@ -95,20 +107,40 @@
                 const uid = cred.user.uid;
                 const name = cred.user.displayName || cred.user.email;
 
-                // Verify user exists in Firestore and has a project assigned
-                // Try Firestore lookup — fallback to default if Firestore not set up yet
                 try {
                     const doc = await firebase.firestore().collection("users").doc(uid).get();
-                    if (doc.exists && doc.data().projectId) {
-                        sessionStorage.setItem("projectId", doc.data().projectId);
-                        sessionStorage.setItem("projectName", doc.data().projectName || "Chat");
+                    if (doc.exists) {
+                        const data = doc.data();
+                        const userProjects = data.projects && data.projects.length ? data.projects : null;
+
+                        if (userProjects && userProjects.length > 1) {
+                            // Multiple projects — show picker, don't redirect yet
+                            const picker = document.getElementById("projectPicker");
+                            picker.innerHTML = userProjects.map(p =>
+                                `<option value="${p.id}">${p.name}</option>`).join("");
+                            document.getElementById("projectPickerRow").style.display = "block";
+                            document.querySelector(".subtitle").textContent = "Choose a project to join";
+                            btn.disabled = false; btn.textContent = "Join";
+                            btn.onclick = function() {
+                                const sel = picker.options[picker.selectedIndex];
+                                sessionStorage.setItem("projectId", sel.value);
+                                sessionStorage.setItem("projectName", sel.text);
+                                sessionStorage.setItem("userName", name);
+                                window.location.href = "/index.html";
+                            };
+                            return;
+                        } else if (data.projectId) {
+                            sessionStorage.setItem("projectId", data.projectId);
+                            sessionStorage.setItem("projectName", data.projectName || "Chat");
+                        } else {
+                            sessionStorage.setItem("projectId", "default");
+                            sessionStorage.setItem("projectName", "Chat");
+                        }
                     } else {
-                        // User not in Firestore yet — use default room
                         sessionStorage.setItem("projectId", "default");
                         sessionStorage.setItem("projectName", "Chat");
                     }
                 } catch(e) {
-                    // Firestore not available — use default room
                     sessionStorage.setItem("projectId", "default");
                     sessionStorage.setItem("projectName", "Chat");
                 }
