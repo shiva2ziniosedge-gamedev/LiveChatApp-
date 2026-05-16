@@ -6,6 +6,7 @@ let typingTimer;
 const typingDelay = 1000;
 let currentUser = "";
 let currentProjectId = "default";
+let currentUserRole = "member"; // "member" or "viewer"
 
 // ── Firestore helpers ──
 function getDb() { return firebase.firestore(); }
@@ -27,20 +28,44 @@ async function saveMessage(type, text, imageData, fileName) {
     }
 }
 
+// ── Date separator helpers ──
+let lastRenderedDate = null;
+
+function getDateLabel(date) {
+    const today = new Date();
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return date.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
+function maybeInsertDateSeparator(date, container) {
+    const label = getDateLabel(date);
+    if (lastRenderedDate === label) return;
+    lastRenderedDate = label;
+    const sep = document.createElement("div");
+    sep.className = "date-separator";
+    sep.innerHTML = `<span>${label}</span>`;
+    container.appendChild(sep);
+}
+
 // Load all messages for this project on page load
 async function loadMessages() {
+    lastRenderedDate = null;
     try {
         const snap = await getDb().collection("messages").doc(currentProjectId)
             .collection("chats").orderBy("timestamp", "asc").get();
+        const list = document.getElementById("messagesList");
         snap.forEach(doc => {
             const d = doc.data();
+            const date = d.timestamp ? d.timestamp.toDate() : new Date();
+            maybeInsertDateSeparator(date, list);
             if (d.type === "text") {
-                renderMessage(d.user, d.text, d.timestamp ? formatTime(d.timestamp.toDate()) : "");
+                renderMessage(d.user, d.text, d.timestamp ? formatTime(date) : "");
             } else if (d.type === "image") {
-                renderImage(d.user, d.imageData, d.fileName, d.timestamp ? formatTime(d.timestamp.toDate()) : "");
+                renderImage(d.user, d.imageData, d.fileName, d.timestamp ? formatTime(date) : "");
             }
         });
-        const list = document.getElementById("messagesList");
         list.scrollTop = list.scrollHeight;
     } catch(e) {
         console.warn("Failed to load messages:", e);
@@ -72,6 +97,7 @@ function compressImage(file, callback) {
 
 // ── Render helpers ──
 function renderMessage(user, message, timestamp) {
+    const list = document.getElementById("messagesList");
     const div = document.createElement("div");
     div.className = "message";
     div.innerHTML = `
@@ -80,10 +106,11 @@ function renderMessage(user, message, timestamp) {
             <div class="message-text">${message}</div>
             <div class="message-time">${timestamp}</div>
         </div>`;
-    document.getElementById("messagesList").appendChild(div);
+    list.appendChild(div);
 }
 
 function renderImage(user, imageData, fileName, timestamp) {
+    const list = document.getElementById("messagesList");
     const div = document.createElement("div");
     div.className = "message";
     div.innerHTML = `
@@ -92,7 +119,7 @@ function renderImage(user, imageData, fileName, timestamp) {
             <img src="${imageData}" alt="${fileName}" style="max-width:300px;border-radius:8px;margin:5px 0;" />
             <div class="message-time">${timestamp}</div>
         </div>`;
-    document.getElementById("messagesList").appendChild(div);
+    list.appendChild(div);
 }
 
 // ── Users list ──
@@ -123,6 +150,28 @@ function updateUsersList(users) {
     });
 }
 
+// ── Apply role restrictions ──
+function applyRoleRestrictions(role) {
+    currentUserRole = role || "member";
+    if (currentUserRole === "viewer") {
+        // Disable chat input
+        document.getElementById("messageInput").disabled = true;
+        document.getElementById("messageInput").placeholder = "Viewers cannot send messages";
+        document.getElementById("sendButton").disabled = true;
+        document.getElementById("imageButton").disabled = true;
+        // Disable status/blocker post buttons
+        const postBtns = document.querySelectorAll(".btn-post");
+        postBtns.forEach(b => { b.disabled = true; b.title = "Viewers cannot post"; });
+        const textareas = document.querySelectorAll(".standup-post-box textarea");
+        textareas.forEach(t => { t.disabled = true; t.placeholder = "Viewers can read but cannot post"; });
+        // Show viewer badge
+        const badge = document.createElement("span");
+        badge.style.cssText = "background:rgba(255,200,0,0.15);color:#ffc800;border:1px solid rgba(255,200,0,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;margin-left:8px;";
+        badge.textContent = "Viewer";
+        document.getElementById("projectTitle").appendChild(badge);
+    }
+}
+
 // ── SignalR events ──
 connection.on("UserJoined", function(username, users) {
     updateUsersList(users);
@@ -144,8 +193,10 @@ connection.on("UserLeft", function(username, users) {
 
 connection.on("ReceiveMessage", function(user, message, timestamp) {
     if (!messagesLoaded) { pendingMessages.push({ type: "text", user, text: message, timestamp }); return; }
+    const list = document.getElementById("messagesList");
+    maybeInsertDateSeparator(new Date(), list);
     renderMessage(user, message, timestamp);
-    document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
+    list.scrollTop = list.scrollHeight;
 });
 
 connection.on("UserIsTyping", function(user) {
@@ -158,26 +209,28 @@ connection.on("UserStoppedTyping", function() {
 
 connection.on("ReceiveImage", function(user, imageData, fileName, timestamp) {
     if (!messagesLoaded) { pendingMessages.push({ type: "image", user, imageData, fileName, timestamp }); return; }
+    const list = document.getElementById("messagesList");
+    maybeInsertDateSeparator(new Date(), list);
     renderImage(user, imageData, fileName, timestamp);
-    document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
+    list.scrollTop = list.scrollHeight;
 });
 
-// ── Start connection (called from index.html once auth is confirmed) ──
+// ── Start connection ──
 let messagesLoaded = false;
-let pendingMessages = []; // buffer SignalR messages that arrive before history loads
+let pendingMessages = [];
 
-window.startChatConnection = async function(user, projectId) {
+window.startChatConnection = async function(user, projectId, role) {
     if (currentUser) return;
     currentUser = user;
     currentProjectId = projectId;
+    applyRoleRestrictions(role);
 
     try {
         await connection.start();
         document.getElementById("onlineStatus").textContent = "Connected";
         await connection.invoke("JoinChat", currentUser, currentProjectId);
-        await loadMessages(); // wait for full history before rendering anything new
+        await loadMessages();
         messagesLoaded = true;
-        // flush any messages that arrived while history was loading
         pendingMessages.forEach(function(m) {
             if (m.type === "text") renderMessage(m.user, m.text, m.timestamp);
             else if (m.type === "image") renderImage(m.user, m.imageData, m.fileName, m.timestamp);
@@ -193,6 +246,7 @@ window.startChatConnection = async function(user, projectId) {
 
 // ── Send message ──
 document.getElementById("sendButton").addEventListener("click", function() {
+    if (currentUserRole === "viewer") return;
     const user = document.getElementById("userInput").value;
     const message = document.getElementById("messageInput").value.trim();
     if (user && message) {
@@ -204,6 +258,7 @@ document.getElementById("sendButton").addEventListener("click", function() {
 });
 
 document.getElementById("messageInput").addEventListener("input", function() {
+    if (currentUserRole === "viewer") return;
     const user = document.getElementById("userInput").value;
     if (user) {
         connection.invoke("UserTyping", user);
@@ -220,19 +275,18 @@ document.getElementById("messageInput").addEventListener("keypress", function(e)
 
 // ── Image ──
 document.getElementById("imageButton").addEventListener("click", function() {
+    if (currentUserRole === "viewer") return;
     document.getElementById("imageInput").click();
 });
 
 document.getElementById("imageInput").addEventListener("change", function(e) {
+    if (currentUserRole === "viewer") return;
     const file = e.target.files[0];
     const user = document.getElementById("userInput").value;
     if (!user) { alert("Please enter your name first!"); return; }
     if (!file || !file.type.startsWith("image/")) return;
-
     compressImage(file, function(compressedData) {
-        // Send via SignalR to online users
         connection.invoke("SendImage", user, compressedData, file.name).catch(err => console.error(err));
-        // Save to Firestore for history
         saveMessage("image", null, compressedData, file.name);
     });
     e.target.value = "";
@@ -255,7 +309,6 @@ function showCallOverlay(status, name, showAccept) {
     document.getElementById("callName").textContent = name;
     document.getElementById("callOverlay").classList.add("active");
     document.getElementById("acceptCallBtn").style.display = showAccept ? "block" : "none";
-    document.getElementById("rejectCallBtn").innerHTML = showAccept ? "📵" : "📵";
 }
 
 function hideCallOverlay() {
@@ -276,7 +329,7 @@ function createPeerConnection(target) {
 }
 
 async function initiateCall(target) {
-    if (!currentUser) { alert("Please enter your name and send a message first!"); return; }
+    if (!currentUser) return;
     if (target === currentUser) return;
     callTarget = target;
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });

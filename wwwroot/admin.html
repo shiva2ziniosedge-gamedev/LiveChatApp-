@@ -110,6 +110,8 @@
         .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 2px 2px; }
         .badge-active { background: rgba(0,229,160,0.15); color: #00e5a0; border: 1px solid rgba(0,229,160,0.3); }
         .badge-project { background: rgba(100,149,237,0.15); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
+        .badge-member { background: rgba(100,149,237,0.15); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
+        .badge-viewer { background: rgba(255,200,0,0.15); color: #ffc800; border: 1px solid rgba(255,200,0,0.3); }
         .empty-state { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); font-size: 14px; }
 
         /* ── Modals ── */
@@ -144,6 +146,46 @@
         .btn-action:hover { opacity: 0.8; }
         .btn-edit { background: rgba(100,149,237,0.2); color: #6495ed; border: 1px solid rgba(100,149,237,0.3) !important; }
         .btn-delete { background: rgba(233,30,74,0.2); color: #ff6b8a; border: 1px solid rgba(233,30,74,0.3) !important; }
+        .btn-msg { background: rgba(233,30,140,0.2); color: #e91e8c; border: 1px solid rgba(233,30,140,0.3) !important; }
+
+        /* ── Admin chat modal textarea ── */
+        .modal textarea {
+            width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
+            font-size: 14px; color: white; outline: none; font-family: inherit;
+            resize: none; min-height: 100px; margin-bottom: 14px;
+            transition: border 0.2s, background 0.2s;
+        }
+        .modal textarea::placeholder { color: rgba(255,255,255,0.4); }
+        .modal textarea:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
+
+        /* ── Admin live chat panel ── */
+        .chat-modal { max-width: 520px; display: flex; flex-direction: column; height: 520px; padding: 24px; }
+        .chat-modal h3 { margin-bottom: 12px; flex-shrink: 0; }
+        .admin-chat-messages {
+            flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px; margin-bottom: 12px;
+        }
+        .admin-chat-messages::-webkit-scrollbar { width: 4px; }
+        .admin-chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+        .acm-bubble { padding: 8px 12px; border-radius: 10px; max-width: 80%; font-size: 13px; line-height: 1.5; word-break: break-word; }
+        .acm-bubble.from-admin { background: rgba(233,30,140,0.2); border: 1px solid rgba(233,30,140,0.25); align-self: flex-end; color: rgba(255,255,255,0.9); }
+        .acm-bubble.from-user { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); align-self: flex-start; color: rgba(255,255,255,0.85); }
+        .acm-meta { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 3px; text-align: right; }
+        .acm-meta.left { text-align: left; }
+        .admin-chat-input-row { display: flex; gap: 8px; flex-shrink: 0; }
+        .admin-chat-input-row input {
+            flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
+            font-size: 13px; color: white; outline: none; margin-bottom: 0;
+        }
+        .admin-chat-input-row input:focus { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.15); }
+        .admin-chat-input-row button {
+            padding: 10px 18px; background: #e91e8c; color: white; border: none;
+            border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer;
+        }
+        .admin-chat-input-row button:hover { background: #c2185b; }
+        .acm-date-sep { text-align: center; font-size: 10px; color: rgba(255,255,255,0.3); margin: 4px 0; }
 
         /* ── Multi-project checkboxes ── */
         .project-checklist {
@@ -229,7 +271,7 @@
             </div>
             <div class="table-card">
                 <table>
-                    <thead><tr><th>Name</th><th>Email</th><th>Projects</th><th>Created</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Projects</th><th>Created</th><th>Actions</th></tr></thead>
                     <tbody id="usersTableBody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
                 </table>
             </div>
@@ -281,6 +323,11 @@
         <input type="password" id="newUserPassword" placeholder="Min 6 characters" />
         <label>Projects (select one or more)</label>
         <div class="project-checklist" id="newUserProjectList"></div>
+        <label>Role</label>
+        <select id="newUserRole">
+            <option value="member">Member — can chat, post, call</option>
+            <option value="viewer">Viewer — read only</option>
+        </select>
         <div class="modal-actions">
             <button class="btn-cancel" onclick="closeModal('userModal')">Cancel</button>
             <button class="btn-submit" id="createUserBtn" onclick="createUser()">Create</button>
@@ -297,9 +344,30 @@
         <input type="text" id="editUserName" placeholder="Full name" />
         <label>Projects (select one or more)</label>
         <div class="project-checklist" id="editUserProjectList"></div>
+        <label>Role</label>
+        <select id="editUserRole">
+            <option value="member">Member — can chat, post, call</option>
+            <option value="viewer">Viewer — read only</option>
+        </select>
         <div class="modal-actions">
             <button class="btn-cancel" onclick="closeModal('editUserModal')">Cancel</button>
             <button class="btn-submit" onclick="saveEditUser()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Live Chat Modal -->
+<div class="modal-overlay" id="msgModal">
+    <div class="modal chat-modal">
+        <h3>💬 Chat with <span id="msgTargetName"></span></h3>
+        <input type="hidden" id="msgTargetUid" />
+        <div class="admin-chat-messages" id="adminChatMessages"></div>
+        <div class="admin-chat-input-row">
+            <input type="text" id="adminChatInput" placeholder="Type a message..." />
+            <button onclick="sendAdminMessage()">Send</button>
+        </div>
+        <div style="margin-top:10px;">
+            <button class="btn-cancel" style="width:100%;" onclick="closeAdminChat()">Close</button>
         </div>
     </div>
 </div>
@@ -376,7 +444,12 @@
         setTimeout(() => t.classList.remove("show"), 3000);
     }
     document.querySelectorAll(".modal-overlay").forEach(el => {
-        el.addEventListener("click", e => { if (e.target === el) closeModal(el.id); });
+        el.addEventListener("click", e => {
+            if (e.target === el) {
+                if (el.id === "msgModal") closeAdminChat();
+                else closeModal(el.id);
+            }
+        });
     });
 
     // ── Multi-project checklist ──
@@ -466,6 +539,7 @@
         const email = document.getElementById("newUserEmail").value.trim();
         const password = document.getElementById("newUserPassword").value;
         const selectedProjects = getCheckedProjects("newUserProjectList");
+        const role = document.getElementById("newUserRole").value;
         const btn = document.getElementById("createUserBtn");
         if (!name || !email || !password) { alert("All fields are required"); return; }
         if (!selectedProjects.length) { alert("Please select at least one project"); return; }
@@ -475,9 +549,8 @@
             const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
             await cred.user.updateProfile({ displayName: name });
             await secondaryApp.auth().signOut();
-            // Store array of projects; keep projectId/projectName as first project for backward compat
             await db.collection("users").doc(cred.user.uid).set({
-                name, email,
+                name, email, role,
                 projectId: selectedProjects[0].id,
                 projectName: selectedProjects[0].name,
                 projects: selectedProjects,
@@ -486,6 +559,7 @@
             document.getElementById("newUserName").value = "";
             document.getElementById("newUserEmail").value = "";
             document.getElementById("newUserPassword").value = "";
+            document.getElementById("newUserRole").value = "member";
             closeModal("userModal");
             await loadUsers();
             showToast(`✅ User "${name}" created`);
@@ -501,6 +575,7 @@
         if (!u) return;
         document.getElementById("editUserId").value = uid;
         document.getElementById("editUserName").value = u.name;
+        document.getElementById("editUserRole").value = u.role || "member";
         const selectedIds = u.projects ? u.projects.map(p => p.id) : (u.projectId ? [u.projectId] : []);
         fillChecklist("editUserProjectList", selectedIds);
         document.getElementById("editUserModal").classList.add("active");
@@ -509,11 +584,12 @@
     async function saveEditUser() {
         const uid = document.getElementById("editUserId").value;
         const name = document.getElementById("editUserName").value.trim();
+        const role = document.getElementById("editUserRole").value;
         const selectedProjects = getCheckedProjects("editUserProjectList");
         if (!name) { alert("Name is required"); return; }
         if (!selectedProjects.length) { alert("Select at least one project"); return; }
         await db.collection("users").doc(uid).update({
-            name,
+            name, role,
             projectId: selectedProjects[0].id,
             projectName: selectedProjects[0].name,
             projects: selectedProjects
@@ -531,21 +607,89 @@
 
     function renderUsers() {
         const tbody = document.getElementById("usersTableBody");
-        if (!users.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No users yet.</td></tr>`; return; }
+        if (!users.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No users yet.</td></tr>`; return; }
         tbody.innerHTML = users.map(u => {
             const projectList = u.projects && u.projects.length
                 ? u.projects.map(p => `<span class="badge badge-project">${p.name}</span>`).join("")
                 : `<span class="badge badge-project">${u.projectName || u.projectId}</span>`;
+            const role = u.role || "member";
+            const roleBadge = `<span class="badge badge-${role}">${role.charAt(0).toUpperCase() + role.slice(1)}</span>`;
             return `<tr>
                 <td>${u.name}</td><td>${u.email}</td>
+                <td>${roleBadge}</td>
                 <td>${projectList}</td>
                 <td>${new Date(u.created).toLocaleDateString()}</td>
-                <td style="display:flex;gap:6px;">
+                <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn-action btn-msg" onclick="openMsgModal('${u.id}','${u.name}')">Message</button>
                     <button class="btn-action btn-edit" onclick="editUser('${u.id}')">Edit</button>
                     <button class="btn-action btn-delete" onclick="deleteUser('${u.id}','${u.name}')">Delete</button>
                 </td>
             </tr>`;
         }).join("");
+    }
+
+    // ── Admin live chat ──
+    let adminChatUnsub = null;
+
+    function openMsgModal(uid, name) {
+        document.getElementById("msgTargetUid").value = uid;
+        document.getElementById("msgTargetName").textContent = name;
+        document.getElementById("adminChatInput").value = "";
+        document.getElementById("msgModal").classList.add("active");
+        // unsubscribe previous listener
+        if (adminChatUnsub) { adminChatUnsub(); adminChatUnsub = null; }
+        // listen real-time
+        adminChatUnsub = db.collection("adminMessages").doc(uid)
+            .collection("chats").orderBy("timestamp", "asc")
+            .onSnapshot(snap => {
+                const container = document.getElementById("adminChatMessages");
+                if (snap.empty) { container.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:20px;">No messages yet. Say hi!</div>'; return; }
+                let html = ""; let lastDate = null;
+                snap.docs.forEach(doc => {
+                    const d = doc.data();
+                    const date = d.timestamp ? d.timestamp.toDate() : new Date();
+                    const dateLabel = getAdminDateLabel(date);
+                    if (dateLabel !== lastDate) {
+                        lastDate = dateLabel;
+                        html += `<div class="acm-date-sep">${dateLabel}</div>`;
+                    }
+                    const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                    const isAdmin = d.from === "Admin";
+                    html += `<div>
+                        <div class="acm-bubble ${isAdmin ? 'from-admin' : 'from-user'}">${d.text}</div>
+                        <div class="acm-meta ${isAdmin ? '' : 'left'}">${isAdmin ? 'You' : d.from || 'User'} · ${time}</div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
+            });
+        // enter key to send
+        document.getElementById("adminChatInput").onkeypress = function(e) {
+            if (e.key === "Enter") sendAdminMessage();
+        };
+    }
+
+    function getAdminDateLabel(date) {
+        const today = new Date(); const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+        if (date.toDateString() === today.toDateString()) return "Today";
+        if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+        return date.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+    }
+
+    async function sendAdminMessage() {
+        const uid = document.getElementById("msgTargetUid").value;
+        const text = document.getElementById("adminChatInput").value.trim();
+        if (!text) return;
+        document.getElementById("adminChatInput").value = "";
+        await db.collection("adminMessages").doc(uid).collection("chats").add({
+            text, from: "Admin",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    function closeAdminChat() {
+        if (adminChatUnsub) { adminChatUnsub(); adminChatUnsub = null; }
+        closeModal("msgModal");
     }
 
     function showError(msg) { const el = document.getElementById("errorMsg"); el.textContent = msg; el.style.display = "block"; }
