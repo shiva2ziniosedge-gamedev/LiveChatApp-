@@ -70,6 +70,13 @@ namespace LiveChatApp.Hubs
                 await Clients.Client(targetConn.Key).SendAsync("IncomingCall", caller);
         }
 
+        public async Task VideoCallUser(string caller, string target)
+        {
+            var targetConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == target);
+            if (!string.IsNullOrEmpty(targetConn.Key))
+                await Clients.Client(targetConn.Key).SendAsync("IncomingVideoCall", caller);
+        }
+
         public async Task AcceptCall(string caller)
         {
             var callerConn = ConnectedUsers.FirstOrDefault(x => x.Value.Name == caller);

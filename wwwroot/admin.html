@@ -227,7 +227,10 @@
         <p class="subtitle">Sign in with your admin account</p>
         <div class="error-msg" id="errorMsg"></div>
         <input type="email" id="adminEmail" placeholder="Admin email" />
-        <input type="password" id="adminPassword" placeholder="Password" />
+        <div style="position:relative;margin-bottom:14px;">
+            <input type="password" id="adminPassword" placeholder="Password" style="margin-bottom:0;padding-right:42px;" />
+            <button type="button" onclick="toggleAdminPw(this)" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:16px;padding:0;line-height:1;">👁</button>
+        </div>
         <button class="btn-primary" id="loginBtn" onclick="adminLogin()">Login</button>
         <div class="back-link"><a href="/home.html">← Back to home</a></div>
     </div>
@@ -267,7 +270,11 @@
         <div class="tab-panel" id="tab-users">
             <div class="panel-header">
                 <div class="section-title">Users</div>
-                <button class="btn-add" onclick="openModal('userModal')">+ New User</button>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none;" />
+                    <button class="btn-add" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);" onclick="document.getElementById('excelFileInput').click()">📤 Upload Excel</button>
+                    <button class="btn-add" onclick="openModal('userModal')">+ New User</button>
+                </div>
             </div>
             <div class="table-card">
                 <table>
@@ -372,6 +379,49 @@
     </div>
 </div>
 
+<!-- Excel Upload Preview Modal -->
+<div class="modal-overlay" id="excelModal">
+    <div class="modal" style="max-width:700px;max-height:80vh;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <h3 style="margin-bottom:0;">📤 Bulk Upload Users</h3>
+            <button onclick="closeModal('excelModal')" style="background:transparent;border:none;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;" title="Close">✕</button>
+        </div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;margin-top:-10px;">Review users before creating. Download the template to get started.</p>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-shrink:0;">
+            <button class="btn-submit" style="flex:none;padding:8px 16px;font-size:13px;" onclick="downloadTemplate()">⬇ Download Template</button>
+            <span style="font-size:13px;color:rgba(255,255,255,0.4);align-self:center;" id="excelFileName"></span>
+        </div>
+        <div style="flex:1;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:10px;margin-bottom:16px;">
+            <table style="width:100%;border-collapse:collapse;" id="excelPreviewTable">
+                <thead>
+                    <tr style="background:rgba(0,0,0,0.3);">
+                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Name</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Email</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Password</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Projects</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Role</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="excelPreviewBody">
+                    <tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px;">Upload an Excel file to preview users</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="excelUploadProgress" style="display:none;margin-bottom:12px;">
+            <div style="background:rgba(255,255,255,0.1);border-radius:20px;height:6px;overflow:hidden;">
+                <div id="excelProgressBar" style="height:100%;background:#e91e8c;border-radius:20px;width:0%;transition:width 0.3s;"></div>
+            </div>
+            <p id="excelProgressText" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:6px;text-align:center;"></p>
+        </div>
+        <div class="modal-actions" style="flex-shrink:0;">
+            <button class="btn-cancel" onclick="closeModal('excelModal')">Cancel</button>
+            <button class="btn-submit" id="excelUploadBtn" onclick="bulkCreateUsers()" disabled>Create All Users</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -690,6 +740,122 @@
     function closeAdminChat() {
         if (adminChatUnsub) { adminChatUnsub(); adminChatUnsub = null; }
         closeModal("msgModal");
+    }
+
+    // ── Excel Bulk Upload ──
+    let excelUsers = [];
+
+    document.getElementById("excelFileInput").addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById("excelFileName").textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            try {
+                const wb = XLSX.read(ev.target.result, { type: "array" });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+                excelUsers = rows.map(r => ({
+                    name: String(r["Name"] || r["name"] || "").trim(),
+                    email: String(r["Email"] || r["email"] || "").trim(),
+                    password: String(r["Password"] || r["password"] || "").trim(),
+                    projectNames: String(r["Projects"] || r["projects"] || "").trim(),
+                    role: String(r["Role"] || r["role"] || "member").toLowerCase().includes("viewer") ? "viewer" : "member"
+                })).filter(u => u.name && u.email && u.password);
+
+                renderExcelPreview();
+                document.getElementById("excelModal").classList.add("active");
+                document.getElementById("excelUploadBtn").disabled = excelUsers.length === 0;
+            } catch(err) {
+                alert("Could not read Excel file. Make sure it's a valid .xlsx file.");
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        e.target.value = "";
+    });
+
+    function renderExcelPreview() {
+        const tbody = document.getElementById("excelPreviewBody");
+        if (!excelUsers.length) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px;">No valid rows found. Check your Excel format.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = excelUsers.map((u, i) => `<tr id="excel-row-${i}" style="border-top:1px solid rgba(255,255,255,0.07);">
+            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.85);">${u.name}</td>
+            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.65);">${u.email}</td>
+            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.4);">••••••</td>
+            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.65);">${u.projectNames || "—"}</td>
+            <td style="padding:10px 12px;"><span style="background:rgba(100,149,237,0.15);color:#6495ed;border:1px solid rgba(100,149,237,0.3);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;">${u.role.charAt(0).toUpperCase()+u.role.slice(1)}</span></td>
+            <td style="padding:10px 12px;font-size:12px;color:rgba(255,255,255,0.3);" id="excel-status-${i}">Pending</td>
+        </tr>`).join("");
+    }
+
+    async function bulkCreateUsers() {
+        if (!excelUsers.length) return;
+        const btn = document.getElementById("excelUploadBtn");
+        btn.disabled = true; btn.textContent = "Creating...";
+        document.getElementById("excelUploadProgress").style.display = "block";
+
+        let success = 0, failed = 0;
+        for (let i = 0; i < excelUsers.length; i++) {
+            const u = excelUsers[i];
+            const statusEl = document.getElementById(`excel-status-${i}`);
+            const rowEl = document.getElementById(`excel-row-${i}`);
+            // Update progress bar
+            document.getElementById("excelProgressBar").style.width = `${Math.round((i / excelUsers.length) * 100)}%`;
+            document.getElementById("excelProgressText").textContent = `Creating ${i + 1} of ${excelUsers.length}...`;
+            try {
+                // Match project names to project IDs
+                const projectNameList = u.projectNames.split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+                const matchedProjects = projectNameList.map(pname => {
+                    const found = projects.find(p => p.name.toLowerCase() === pname.toLowerCase());
+                    return found ? { id: found.id, name: found.name } : null;
+                }).filter(Boolean);
+                const selectedProjects = matchedProjects.length ? matchedProjects : (projects.length ? [{ id: projects[0].id, name: projects[0].name }] : []);
+
+                const cred = await secondaryApp.auth().createUserWithEmailAndPassword(u.email, u.password);
+                await cred.user.updateProfile({ displayName: u.name });
+                await secondaryApp.auth().signOut();
+                await db.collection("users").doc(cred.user.uid).set({
+                    name: u.name, email: u.email, role: u.role,
+                    projectId: selectedProjects[0]?.id || "", projectName: selectedProjects[0]?.name || "",
+                    projects: selectedProjects, created: new Date().toISOString()
+                });
+                statusEl.textContent = "✅ Created";
+                statusEl.style.color = "#00e5a0";
+                success++;
+            } catch(err) {
+                statusEl.textContent = "❌ " + (err.code === "auth/email-already-in-use" ? "Already exists" : err.message);
+                statusEl.style.color = "#ff6b8a";
+                if (rowEl) rowEl.style.opacity = "0.5";
+                failed++;
+            }
+        }
+
+        document.getElementById("excelProgressBar").style.width = "100%";
+        document.getElementById("excelProgressText").textContent = `Done — ${success} created, ${failed} failed`;
+        btn.textContent = "Done";
+        await loadUsers();
+        showToast(`✅ Bulk upload: ${success} users created`);
+    }
+
+    function downloadTemplate() {
+        const ws = XLSX.utils.aoa_to_sheet([
+            ["Name", "Email", "Password", "Projects", "Role"],
+            ["John Doe", "john@company.com", "password123", "Frontend Team", "Member"],
+            ["Jane Smith", "jane@company.com", "password123", "Backend Team", "Viewer"]
+        ]);
+        ws["!cols"] = [{ wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 10 }];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Users");
+        XLSX.writeFile(wb, "TeamChat_Users_Template.xlsx");
+    }
+
+    function toggleAdminPw(btn) {
+        const inp = document.getElementById("adminPassword");
+        if (inp.type === "password") { inp.type = "text"; btn.textContent = "🙈"; }
+        else { inp.type = "password"; btn.textContent = "👁"; }
     }
 
     function showError(msg) { const el = document.getElementById("errorMsg"); el.textContent = msg; el.style.display = "block"; }

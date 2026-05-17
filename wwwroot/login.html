@@ -59,6 +59,9 @@
         }
         select option { background: #1a1a2e; color: white; }
         select:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
+        .password-wrap { position: relative; margin-bottom: 14px; }
+        .password-wrap input { margin-bottom: 0; width: 100%; padding-right: 42px; }
+        .toggle-pw { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.4); font-size: 16px; padding: 0; line-height: 1; transition: color 0.15s; }
         #projectPickerRow { display: none; }
     </style>
 </head>
@@ -68,7 +71,10 @@
         <p class="subtitle">Login to join the chat</p>
         <div class="error" id="errorMsg"></div>
         <input type="email" id="email" placeholder="Email address" />
-        <input type="password" id="password" placeholder="Password" />
+        <div class="password-wrap">
+            <input type="password" id="password" placeholder="Password" />
+            <button type="button" class="toggle-pw" onclick="togglePw('password',this)" tabindex="-1">👁</button>
+        </div>
         <div id="projectPickerRow">
             <select id="projectPicker"></select>
         </div>
@@ -151,6 +157,12 @@
                 showError(getErrorMessage(error.code));
                 btn.disabled = false; btn.textContent = "Login";
             }
+        }
+
+        function togglePw(id, btn) {
+            const inp = document.getElementById(id);
+            if (inp.type === "password") { inp.type = "text"; btn.textContent = "🙈"; }
+            else { inp.type = "password"; btn.textContent = "👁"; }
         }
 
         function showError(msg) {
