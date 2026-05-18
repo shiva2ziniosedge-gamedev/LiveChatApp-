@@ -1,424 +1,334 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Live Chat</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #4a3f6b 60%, #7b6fa0 80%, #a89bc2 100%);
-            background-attachment: fixed;
-        }
-        body::before {
-            content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 45%;
-            background: linear-gradient(180deg, transparent 0%, #2d1b4e 100%);
-            clip-path: polygon(0% 60%, 8% 40%, 15% 50%, 22% 30%, 30% 45%, 38% 20%, 45% 35%, 52% 15%, 60% 30%, 68% 10%, 75% 25%, 82% 5%, 90% 20%, 95% 10%, 100% 15%, 100% 100%, 0% 100%);
-            z-index: 0; opacity: 0.8;
-        }
-        #loginScreen {
-            position: relative; z-index: 1;
-            display: flex; justify-content: center; align-items: center; min-height: 100vh;
-        }
-        .login-card {
-            background: rgba(255,255,255,0.08); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
-            padding: 40px; width: 100%; max-width: 380px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-        }
-        .login-card h2 { color: white; font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 6px; }
-        .login-card .subtitle { color: rgba(255,255,255,0.5); font-size: 13px; text-align: center; margin-bottom: 28px; }
-        input, select {
-            width: 100%; padding: 12px 16px;
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 10px; font-size: 14px; color: white; outline: none;
-            margin-bottom: 14px; transition: border 0.2s, background 0.2s;
-        }
-        input::placeholder { color: rgba(255,255,255,0.4); }
-        input:focus, select:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
-        select { cursor: pointer; appearance: none; }
-        select option { background: #1a1a2e; color: white; }
-        .btn-primary {
-            width: 100%; padding: 13px; background: #e91e8c; color: white;
-            border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
-            cursor: pointer; transition: background 0.2s, transform 0.1s;
-            box-shadow: 0 4px 15px rgba(233,30,140,0.4);
-        }
-        .btn-primary:hover { background: #c2185b; transform: scale(1.02); }
-        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .error-msg {
-            background: rgba(233,30,74,0.2); border: 1px solid rgba(233,30,74,0.4);
-            color: #ff6b8a; padding: 10px 14px; border-radius: 8px;
-            font-size: 13px; margin-bottom: 14px; display: none;
-        }
-        .back-link { text-align: center; margin-top: 18px; color: rgba(255,255,255,0.5); font-size: 13px; }
-        .back-link a { color: #e91e8c; text-decoration: none; font-weight: 600; }
-        #dashboard { display: none; position: relative; z-index: 1; min-height: 100vh; }
-        .topbar {
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 16px 28px; display: flex; align-items: center; justify-content: space-between;
-        }
-        .topbar h1 { color: white; font-size: 20px; font-weight: 700; }
-        .topbar span { color: rgba(255,255,255,0.5); font-size: 13px; }
-        .btn-logout {
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.7); border-radius: 8px; padding: 7px 14px;
-            cursor: pointer; font-size: 13px; transition: background 0.2s;
-        }
-        .btn-logout:hover { background: rgba(255,255,255,0.2); }
-        .dashboard-body { padding: 28px; max-width: 1100px; margin: 0 auto; }
-
-        /* ── Tabs ── */
-        .tabs-bar {
-            display: flex; gap: 4px; margin-bottom: 24px;
-            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 5px;
-            width: fit-content;
-        }
-        .tab-btn {
-            padding: 9px 22px; border-radius: 9px; border: none; cursor: pointer;
-            font-size: 14px; font-weight: 600; transition: background 0.2s, color 0.2s;
-            background: transparent; color: rgba(255,255,255,0.5);
-        }
-        .tab-btn.active { background: #e91e8c; color: white; box-shadow: 0 2px 10px rgba(233,30,140,0.4); }
-        .tab-btn:not(.active):hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
-
-        /* ── Tab panel header row ── */
-        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .section-title { color: white; font-size: 18px; font-weight: 700; }
-        .btn-add {
-            padding: 9px 18px; background: #e91e8c; color: white;
-            border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
-            cursor: pointer; transition: background 0.2s;
-            box-shadow: 0 2px 10px rgba(233,30,140,0.35);
-        }
-        .btn-add:hover { background: #c2185b; }
-
-        .table-card {
-            background: rgba(255,255,255,0.06); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; overflow: hidden;
-        }
-        table { width: 100%; border-collapse: collapse; }
-        thead tr { background: rgba(0,0,0,0.2); }
-        th { padding: 14px 18px; text-align: left; color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        td { padding: 14px 18px; color: rgba(255,255,255,0.85); font-size: 14px; border-top: 1px solid rgba(255,255,255,0.07); vertical-align: middle; }
-        tr:hover td { background: rgba(255,255,255,0.04); }
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 2px 2px; }
-        .badge-active { background: rgba(0,229,160,0.15); color: #00e5a0; border: 1px solid rgba(0,229,160,0.3); }
-        .badge-project { background: rgba(100,149,237,0.15); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
-        .badge-member { background: rgba(100,149,237,0.15); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
-        .badge-viewer { background: rgba(255,200,0,0.15); color: #ffc800; border: 1px solid rgba(255,200,0,0.3); }
-        .empty-state { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); font-size: 14px; }
-
-        /* ── Modals ── */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-            z-index: 100; justify-content: center; align-items: center;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal {
-            background: rgba(20,12,45,0.97); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 20px; padding: 36px; width: 100%; max-width: 440px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-        }
-        .modal h3 { color: white; font-size: 20px; font-weight: 700; margin-bottom: 20px; }
-        .modal label { display: block; color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 6px; }
-        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-cancel {
-            flex: 1; padding: 12px; background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7);
-            border-radius: 10px; font-size: 14px; cursor: pointer; transition: background 0.2s;
-        }
-        .btn-cancel:hover { background: rgba(255,255,255,0.15); }
-        .btn-submit {
-            flex: 1; padding: 12px; background: #e91e8c; color: white;
-            border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
-            cursor: pointer; transition: background 0.2s;
-        }
-        .btn-submit:hover { background: #c2185b; }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-action { padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; border: none; }
-        .btn-action:hover { opacity: 0.8; }
-        .btn-edit { background: rgba(100,149,237,0.2); color: #6495ed; border: 1px solid rgba(100,149,237,0.3) !important; }
-        .btn-delete { background: rgba(233,30,74,0.2); color: #ff6b8a; border: 1px solid rgba(233,30,74,0.3) !important; }
-        .btn-msg { background: rgba(233,30,140,0.2); color: #e91e8c; border: 1px solid rgba(233,30,140,0.3) !important; }
-
-        /* ── Admin chat modal textarea ── */
-        .modal textarea {
-            width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
-            font-size: 14px; color: white; outline: none; font-family: inherit;
-            resize: none; min-height: 100px; margin-bottom: 14px;
-            transition: border 0.2s, background 0.2s;
-        }
-        .modal textarea::placeholder { color: rgba(255,255,255,0.4); }
-        .modal textarea:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
-
-        /* ── Admin live chat panel ── */
-        .chat-modal { max-width: 520px; display: flex; flex-direction: column; height: 520px; padding: 24px; }
-        .chat-modal h3 { margin-bottom: 12px; flex-shrink: 0; }
-        .admin-chat-messages {
-            flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
-            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px; margin-bottom: 12px;
-        }
-        .admin-chat-messages::-webkit-scrollbar { width: 4px; }
-        .admin-chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-        .acm-bubble { padding: 8px 12px; border-radius: 10px; max-width: 80%; font-size: 13px; line-height: 1.5; word-break: break-word; }
-        .acm-bubble.from-admin { background: rgba(233,30,140,0.2); border: 1px solid rgba(233,30,140,0.25); align-self: flex-end; color: rgba(255,255,255,0.9); }
-        .acm-bubble.from-user { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); align-self: flex-start; color: rgba(255,255,255,0.85); }
-        .acm-meta { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 3px; text-align: right; }
-        .acm-meta.left { text-align: left; }
-        .admin-chat-input-row { display: flex; gap: 8px; flex-shrink: 0; }
-        .admin-chat-input-row input {
-            flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
-            font-size: 13px; color: white; outline: none; margin-bottom: 0;
-        }
-        .admin-chat-input-row input:focus { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.15); }
-        .admin-chat-input-row button {
-            padding: 10px 18px; background: #e91e8c; color: white; border: none;
-            border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer;
-        }
-        .admin-chat-input-row button:hover { background: #c2185b; }
-        .acm-date-sep { text-align: center; font-size: 10px; color: rgba(255,255,255,0.3); margin: 4px 0; }
-
-        /* ── Multi-project checkboxes ── */
-        .project-checklist {
-            max-height: 180px; overflow-y: auto;
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 10px; padding: 8px; margin-bottom: 14px;
-        }
-        .project-checklist::-webkit-scrollbar { width: 4px; }
-        .project-checklist::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-        .check-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 10px; border-radius: 8px; cursor: pointer;
-            transition: background 0.15s;
-        }
-        .check-item:hover { background: rgba(255,255,255,0.07); }
-        .check-item input[type="checkbox"] {
-            width: 16px; height: 16px; margin: 0; padding: 0;
-            accent-color: #e91e8c; cursor: pointer;
-        }
-        .check-item span { color: rgba(255,255,255,0.85); font-size: 14px; }
-
-        .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
-            background: rgba(0,229,160,0.15); border: 1px solid rgba(0,229,160,0.4);
-            color: #00e5a0; padding: 12px 24px; border-radius: 12px;
-            font-size: 14px; font-weight: 600; backdrop-filter: blur(10px);
-            opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 9999;
-            pointer-events: none;
-        }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — TeamChat</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f5f7fa;color:#2c3e50;min-height:100vh;}
+#loginScreen{min-height:100vh;display:flex;}
+.login-left{flex:1;background:#1e2a35;display:flex;flex-direction:column;justify-content:center;padding:60px;position:relative;overflow:hidden;}
+.login-left::after{content:'';position:absolute;bottom:-80px;right:-80px;width:280px;height:280px;background:rgba(33,150,166,0.08);border-radius:50%;}
+.ll-brand{display:flex;align-items:center;gap:10px;margin-bottom:48px;position:relative;z-index:1;}
+.ll-icon{width:38px;height:38px;background:#2196a6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.ll-name{font-size:18px;font-weight:800;color:#fff;}
+.ll-title{font-size:32px;font-weight:800;color:#fff;line-height:1.2;letter-spacing:-0.8px;margin-bottom:14px;position:relative;z-index:1;}
+.ll-sub{font-size:15px;color:#8fa3b1;line-height:1.65;max-width:340px;position:relative;z-index:1;}
+.login-right{width:480px;background:#fff;display:flex;align-items:center;justify-content:center;padding:48px 40px;border-left:1px solid #e8ecef;}
+.lform{width:100%;max-width:360px;}
+.lform h2{font-size:24px;font-weight:800;color:#1e2a35;margin-bottom:6px;letter-spacing:-0.4px;}
+.lform .sub{font-size:14px;color:#7f8c8d;margin-bottom:28px;}
+.error-msg{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:7px;font-size:13px;margin-bottom:16px;display:none;}
+.field{margin-bottom:16px;}
+.field label,label{display:block;font-size:12px;font-weight:700;color:#2c3e50;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;}
+input,select,textarea{width:100%;padding:10px 12px;background:#f5f7fa;border:1.5px solid #e8ecef;border-radius:7px;font-size:14px;color:#2c3e50;outline:none;margin-bottom:14px;transition:border-color 0.15s,box-shadow 0.15s;font-family:inherit;}
+input::placeholder,textarea::placeholder{color:#aab4be;}
+input:focus,select:focus,textarea:focus{border-color:#2196a6;background:#fff;box-shadow:0 0 0 3px rgba(33,150,166,0.08);}
+select{cursor:pointer;appearance:none;}
+select option{background:#fff;}
+textarea{resize:none;min-height:80px;}
+.pw-wrap{position:relative;}
+.pw-wrap input{padding-right:42px;margin-bottom:0;}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aab4be;font-size:16px;padding:0;line-height:1;transition:color 0.15s;}
+.pw-toggle:hover{color:#2196a6;}
+.btn-primary{width:100%;padding:12px;background:#2196a6;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s,box-shadow 0.15s;box-shadow:0 4px 14px rgba(33,150,166,0.25);}
+.btn-primary:hover{background:#1a7a8a;box-shadow:0 6px 20px rgba(33,150,166,0.35);}
+.btn-primary:disabled{opacity:0.55;cursor:not-allowed;box-shadow:none;}
+.back-link{text-align:center;margin-top:16px;}
+.back-link a{font-size:13px;color:#2196a6;text-decoration:none;}
+.back-link a:hover{text-decoration:underline;}
+#dashboard{display:none;}
+.topbar{height:58px;background:#1e2a35;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;padding:0 28px;gap:14px;position:sticky;top:0;z-index:10;}
+.tb-brand{display:flex;align-items:center;gap:8px;}
+.tb-icon{width:30px;height:30px;background:#2196a6;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.tb-name{font-size:15px;font-weight:800;color:#fff;}
+.tb-sep{width:1px;height:18px;background:rgba(255,255,255,0.12);}
+.tb-title{font-size:13px;font-weight:600;color:#8fa3b1;}
+.tb-admin{font-size:12px;color:#8fa3b1;margin-left:auto;}
+.btn-logout{background:transparent;border:1.5px solid rgba(255,255,255,0.15);color:#8fa3b1;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.15s;}
+.btn-logout:hover{border-color:#ef4444;color:#ef4444;}
+.dashboard-body{padding:28px;max-width:1100px;margin:0 auto;}
+.tabs-bar{display:flex;border-bottom:1px solid #e8ecef;margin-bottom:24px;}
+.tab-btn{padding:11px 20px;font-size:13px;font-weight:600;color:#7f8c8d;background:transparent;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;}
+.tab-btn:hover{color:#2196a6;}
+.tab-btn.active{color:#2196a6;border-bottom-color:#2196a6;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.panel-title{font-size:18px;font-weight:800;color:#1e2a35;letter-spacing:-0.3px;}
+.btn-add{padding:9px 18px;background:#2196a6;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.15s;box-shadow:0 2px 8px rgba(33,150,166,0.2);}
+.btn-add:hover{background:#1a7a8a;}
+.btn-add-ghost{padding:9px 18px;background:#fff;color:#2c3e50;border:1.5px solid #e8ecef;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.btn-add-ghost:hover{border-color:#2196a6;color:#2196a6;}
+.table-wrap{background:#fff;border:1px solid #e8ecef;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:#f5f7fa;}
+th{padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8ecef;}
+td{padding:13px 16px;font-size:13px;color:#4a5568;border-bottom:1px solid #f5f7fa;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#f9fafb;}
+.empty-state{text-align:center;padding:40px;color:#aab4be;font-size:13px;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin:1px;}
+.badge-active{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;}
+.badge-project{background:#e0f7fa;color:#00838f;border:1px solid #b2ebf2;}
+.badge-member{background:#e0f7fa;color:#00838f;border:1px solid #b2ebf2;}
+.badge-viewer{background:#fff8e1;color:#f57f17;border:1px solid #ffe082;}
+.btn-action{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;border:1.5px solid transparent;background:transparent;}
+.btn-edit{color:#2196a6;border-color:#b2ebf2;background:#e0f7fa;}
+.btn-edit:hover{background:#b2ebf2;}
+.btn-delete{color:#dc2626;border-color:#fecaca;background:#fef2f2;}
+.btn-delete:hover{background:#fee2e2;}
+.btn-msg{color:#2e7d32;border-color:#c8e6c9;background:#e8f5e9;}
+.btn-msg:hover{background:#c8e6c9;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(30,42,53,0.5);z-index:100;justify-content:center;align-items:center;}
+.modal-overlay.active{display:flex;}
+.modal{background:#fff;border:1px solid #e8ecef;border-radius:14px;padding:28px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,0.12);}
+.modal.chat-modal{padding:0;max-width:560px;}
+.modal h3{font-size:18px;font-weight:800;color:#1e2a35;margin-bottom:20px;letter-spacing:-0.3px;}
+.modal label{display:block;font-size:12px;font-weight:700;color:#2c3e50;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;}
+.modal-actions{display:flex;gap:10px;margin-top:4px;}
+.btn-cancel{flex:1;padding:11px;background:#f5f7fa;border:1.5px solid #e8ecef;color:#2c3e50;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.15s;}
+.btn-cancel:hover{background:#e8ecef;}
+.btn-submit{flex:1;padding:11px;background:#2196a6;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;}
+.btn-submit:hover{background:#1a7a8a;}
+.btn-submit:disabled{opacity:0.5;cursor:not-allowed;}
+.project-checklist{max-height:160px;overflow-y:auto;background:#f5f7fa;border:1.5px solid #e8ecef;border-radius:7px;padding:6px;margin-bottom:14px;}
+.project-checklist::-webkit-scrollbar{width:3px;}
+.project-checklist::-webkit-scrollbar-thumb{background:#e8ecef;border-radius:2px;}
+.check-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;transition:background 0.1s;}
+.check-item:hover{background:#e0f7fa;}
+.check-item input[type="checkbox"]{width:14px;height:14px;margin:0;padding:0;accent-color:#2196a6;cursor:pointer;}
+.check-item span{font-size:13px;color:#2c3e50;font-weight:500;}
+.chat-modal-header{padding:20px 24px;border-bottom:1px solid #e8ecef;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.chat-modal-avatar{width:38px;height:38px;background:#e0f7fa;border:2px solid #b2ebf2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.chat-modal-info{flex:1;}
+.chat-modal-name{font-size:15px;font-weight:700;color:#1e2a35;}
+.chat-modal-sub{font-size:12px;color:#7f8c8d;}
+.chat-modal-close{background:transparent;border:none;color:#aab4be;font-size:20px;cursor:pointer;padding:4px;border-radius:6px;transition:background 0.15s;line-height:1;}
+.chat-modal-close:hover{background:#f5f7fa;color:#2c3e50;}
+.admin-chat-messages{flex:1;overflow-y:auto;background:#f5f7fa;padding:16px;display:flex;flex-direction:column;gap:4px;}
+.admin-chat-messages::-webkit-scrollbar{width:3px;}
+.admin-chat-messages::-webkit-scrollbar-thumb{background:#e8ecef;border-radius:2px;}
+.acm-row{display:flex;flex-direction:column;margin-bottom:8px;}
+.acm-row.right{align-items:flex-end;}
+.acm-row.left{align-items:flex-start;}
+.acm-bubble{padding:10px 14px;border-radius:18px;max-width:75%;font-size:14px;line-height:1.5;word-break:break-word;}
+.acm-bubble.from-admin{background:#2196a6;color:#fff;border-radius:18px 18px 4px 18px;}
+.acm-bubble.from-user{background:#fff;border:1px solid #e8ecef;color:#2c3e50;border-radius:18px 18px 18px 4px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.acm-meta{font-size:10px;color:#aab4be;margin-top:4px;padding:0 4px;}
+.acm-date-sep{text-align:center;font-size:11px;color:#aab4be;padding:8px 0;display:flex;align-items:center;gap:8px;}
+.acm-date-sep::before,.acm-date-sep::after{content:'';flex:1;height:1px;background:#e8ecef;}
+.admin-chat-input-area{padding:12px 16px;border-top:1px solid #e8ecef;background:#fff;flex-shrink:0;}
+.admin-chat-input-row{display:flex;gap:8px;align-items:center;background:#f5f7fa;border:1.5px solid #e8ecef;border-radius:10px;padding:4px 4px 4px 14px;transition:border-color 0.15s;}
+.admin-chat-input-row:focus-within{border-color:#2196a6;background:#fff;box-shadow:0 0 0 3px rgba(33,150,166,0.08);}
+.admin-chat-input-row input{flex:1;background:transparent;border:none;outline:none;font-size:14px;color:#2c3e50;padding:8px 0;margin-bottom:0;}
+.admin-chat-input-row input::placeholder{color:#aab4be;}
+.admin-chat-input-row button{padding:8px 18px;background:#2196a6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
+.admin-chat-input-row button:hover{background:#1a7a8a;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:#1e2a35;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;transition:opacity 0.25s,transform 0.25s;z-index:9999;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@media(max-width:768px){.login-left{display:none;}.login-right{width:100%;border:none;}.dashboard-body{padding:16px;}}
+</style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 
 <div id="loginScreen">
-    <div class="login-card">
-        <h2>🛡️ Admin Login</h2>
-        <p class="subtitle">Sign in with your admin account</p>
-        <div class="error-msg" id="errorMsg"></div>
-        <input type="email" id="adminEmail" placeholder="Admin email" />
-        <div style="position:relative;margin-bottom:14px;">
-            <input type="password" id="adminPassword" placeholder="Password" style="margin-bottom:0;padding-right:42px;" />
-            <button type="button" onclick="toggleAdminPw(this)" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:16px;padding:0;line-height:1;">👁</button>
+  <div class="login-left">
+    <div class="ll-brand"><div class="ll-icon">💬</div><span class="ll-name">TeamChat</span></div>
+    <div class="ll-title">Admin Dashboard</div>
+    <p class="ll-sub">Manage your team, projects, and workspace from one central place.</p>
+  </div>
+  <div class="login-right">
+    <div class="lform">
+      <h2>Admin sign in</h2>
+      <p class="sub">Access the admin dashboard</p>
+      <div class="error-msg" id="errorMsg"></div>
+      <div class="field"><label>Email</label><input type="email" id="adminEmail" placeholder="admin@company.com" /></div>
+      <div class="field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="adminPassword" placeholder="••••••••" />
+          <button type="button" class="pw-toggle" onclick="toggleAdminPw(this)" tabindex="-1">👁</button>
         </div>
-        <button class="btn-primary" id="loginBtn" onclick="adminLogin()">Login</button>
-        <div class="back-link"><a href="/home.html">← Back to home</a></div>
+      </div>
+      <button class="btn-primary" id="loginBtn" onclick="adminLogin()" style="margin-top:8px;">Sign in →</button>
+      <div class="back-link"><a href="/home.html">← Back to home</a></div>
     </div>
+  </div>
 </div>
 
 <div id="dashboard">
-    <div class="topbar">
-        <div>
-            <h1>🛡️ Admin Panel</h1>
-            <span id="adminName"></span>
-        </div>
-        <button class="btn-logout" onclick="logout()">Logout</button>
+  <div class="topbar">
+    <div class="tb-brand"><div class="tb-icon">💬</div><span class="tb-name">TeamChat</span></div>
+    <div class="tb-sep"></div>
+    <span class="tb-title">Admin Panel</span>
+    <span class="tb-admin" id="adminName"></span>
+    <button class="btn-logout" onclick="logout()">Sign out</button>
+  </div>
+  <div class="dashboard-body">
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('projects',this)">📁 Projects</button>
+      <button class="tab-btn" onclick="switchTab('users',this)">👤 Users</button>
     </div>
-    <div class="dashboard-body">
-
-        <!-- Browser-style tabs -->
-        <div class="tabs-bar">
-            <button class="tab-btn active" onclick="switchTab('projects')">📁 Projects</button>
-            <button class="tab-btn" onclick="switchTab('users')">👤 Users</button>
-        </div>
-
-        <!-- Projects Tab -->
-        <div class="tab-panel active" id="tab-projects">
-            <div class="panel-header">
-                <div class="section-title">Projects</div>
-                <button class="btn-add" onclick="openModal('projectModal')">+ New Project</button>
-            </div>
-            <div class="table-card">
-                <table>
-                    <thead><tr><th>Project Name</th><th>Description</th><th>Created</th><th>Status</th><th>Actions</th></tr></thead>
-                    <tbody id="projectsTableBody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Users Tab -->
-        <div class="tab-panel" id="tab-users">
-            <div class="panel-header">
-                <div class="section-title">Users</div>
-                <div style="display:flex;gap:10px;align-items:center;">
-                    <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none;" />
-                    <button class="btn-add" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);" onclick="document.getElementById('excelFileInput').click()">📤 Upload Excel</button>
-                    <button class="btn-add" onclick="openModal('userModal')">+ New User</button>
-                </div>
-            </div>
-            <div class="table-card">
-                <table>
-                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Projects</th><th>Created</th><th>Actions</th></tr></thead>
-                    <tbody id="usersTableBody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-
+    <div class="tab-panel active" id="tab-projects">
+      <div class="panel-header">
+        <span class="panel-title">Projects</span>
+        <button class="btn-add" onclick="openModal('projectModal')">+ New project</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Description</th><th>Created</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="projectsTableBody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
+    <div class="tab-panel" id="tab-users">
+      <div class="panel-header">
+        <span class="panel-title">Users</span>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none;" />
+          <button class="btn-add-ghost" onclick="document.getElementById('excelFileInput').click()">📤 Upload Excel</button>
+          <button class="btn-add" onclick="openModal('userModal')">+ New user</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Projects</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody id="usersTableBody"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Create Project Modal -->
+<!-- Create Project -->
 <div class="modal-overlay" id="projectModal">
-    <div class="modal">
-        <h3>📁 Create Project</h3>
-        <label>Project Name</label>
-        <input type="text" id="projectName" placeholder="e.g. Support Chat" />
-        <label>Description</label>
-        <input type="text" id="projectDesc" placeholder="Short description" />
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal('projectModal')">Cancel</button>
-            <button class="btn-submit" onclick="createProject()">Create</button>
-        </div>
+  <div class="modal">
+    <h3>New project</h3>
+    <label>Project name</label><input type="text" id="projectName" placeholder="e.g. Frontend Team" />
+    <label>Description</label><input type="text" id="projectDesc" placeholder="Short description" />
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('projectModal')">Cancel</button>
+      <button class="btn-submit" onclick="createProject()">Create</button>
     </div>
+  </div>
 </div>
 
-<!-- Edit Project Modal -->
+<!-- Edit Project -->
 <div class="modal-overlay" id="editProjectModal">
-    <div class="modal">
-        <h3>✏️ Edit Project</h3>
-        <input type="hidden" id="editProjectId" />
-        <label>Project Name</label>
-        <input type="text" id="editProjectName" placeholder="Project name" />
-        <label>Description</label>
-        <input type="text" id="editProjectDesc" placeholder="Short description" />
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal('editProjectModal')">Cancel</button>
-            <button class="btn-submit" onclick="saveEditProject()">Save</button>
-        </div>
+  <div class="modal">
+    <h3>Edit project</h3>
+    <input type="hidden" id="editProjectId" />
+    <label>Project name</label><input type="text" id="editProjectName" />
+    <label>Description</label><input type="text" id="editProjectDesc" />
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('editProjectModal')">Cancel</button>
+      <button class="btn-submit" onclick="saveEditProject()">Save</button>
     </div>
+  </div>
 </div>
 
-<!-- Create User Modal -->
+<!-- Create User -->
 <div class="modal-overlay" id="userModal">
-    <div class="modal">
-        <h3>👤 Create User</h3>
-        <label>Display Name</label>
-        <input type="text" id="newUserName" placeholder="Full name" />
-        <label>Email</label>
-        <input type="email" id="newUserEmail" placeholder="user@example.com" />
-        <label>Password</label>
-        <input type="password" id="newUserPassword" placeholder="Min 6 characters" />
-        <label>Projects (select one or more)</label>
-        <div class="project-checklist" id="newUserProjectList"></div>
-        <label>Role</label>
-        <select id="newUserRole">
-            <option value="member">Member — can chat, post, call</option>
-            <option value="viewer">Viewer — read only</option>
-        </select>
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal('userModal')">Cancel</button>
-            <button class="btn-submit" id="createUserBtn" onclick="createUser()">Create</button>
-        </div>
+  <div class="modal">
+    <h3>New user</h3>
+    <label>Display name</label><input type="text" id="newUserName" placeholder="Full name" />
+    <label>Email</label><input type="email" id="newUserEmail" placeholder="user@company.com" />
+    <label>Password</label><input type="password" id="newUserPassword" placeholder="Min 6 characters" />
+    <label>Projects</label>
+    <div class="project-checklist" id="newUserProjectList"></div>
+    <label>Role</label>
+    <select id="newUserRole">
+      <option value="member">Member — can chat, post, call</option>
+      <option value="viewer">Viewer — read only</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('userModal')">Cancel</button>
+      <button class="btn-submit" id="createUserBtn" onclick="createUser()">Create</button>
     </div>
+  </div>
 </div>
 
-<!-- Edit User Modal -->
+<!-- Edit User -->
 <div class="modal-overlay" id="editUserModal">
-    <div class="modal">
-        <h3>✏️ Edit User</h3>
-        <input type="hidden" id="editUserId" />
-        <label>Display Name</label>
-        <input type="text" id="editUserName" placeholder="Full name" />
-        <label>Projects (select one or more)</label>
-        <div class="project-checklist" id="editUserProjectList"></div>
-        <label>Role</label>
-        <select id="editUserRole">
-            <option value="member">Member — can chat, post, call</option>
-            <option value="viewer">Viewer — read only</option>
-        </select>
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal('editUserModal')">Cancel</button>
-            <button class="btn-submit" onclick="saveEditUser()">Save</button>
-        </div>
+  <div class="modal">
+    <h3>Edit user</h3>
+    <input type="hidden" id="editUserId" />
+    <label>Display name</label><input type="text" id="editUserName" />
+    <label>Projects</label>
+    <div class="project-checklist" id="editUserProjectList"></div>
+    <label>Role</label>
+    <select id="editUserRole">
+      <option value="member">Member — can chat, post, call</option>
+      <option value="viewer">Viewer — read only</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('editUserModal')">Cancel</button>
+      <button class="btn-submit" onclick="saveEditUser()">Save</button>
     </div>
+  </div>
 </div>
 
-<!-- Admin Live Chat Modal -->
+<!-- Admin Live Chat -->
 <div class="modal-overlay" id="msgModal">
-    <div class="modal chat-modal">
-        <h3>💬 Chat with <span id="msgTargetName"></span></h3>
-        <input type="hidden" id="msgTargetUid" />
-        <div class="admin-chat-messages" id="adminChatMessages"></div>
-        <div class="admin-chat-input-row">
-            <input type="text" id="adminChatInput" placeholder="Type a message..." />
-            <button onclick="sendAdminMessage()">Send</button>
-        </div>
-        <div style="margin-top:10px;">
-            <button class="btn-cancel" style="width:100%;" onclick="closeAdminChat()">Close</button>
-        </div>
+  <div class="modal chat-modal" style="display:flex;flex-direction:column;height:520px;">
+    <div class="chat-modal-header">
+      <div class="chat-modal-avatar">👤</div>
+      <div class="chat-modal-info">
+        <div class="chat-modal-name" id="msgTargetName">User</div>
+        <div class="chat-modal-sub">Direct message</div>
+      </div>
+      <button class="chat-modal-close" onclick="closeAdminChat()">✕</button>
     </div>
+    <input type="hidden" id="msgTargetUid" />
+    <div class="admin-chat-messages" id="adminChatMessages"></div>
+    <div class="admin-chat-input-area">
+      <div class="admin-chat-input-row">
+        <input type="text" id="adminChatInput" placeholder="Type a message..." />
+        <button onclick="sendAdminMessage()">Send</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Excel Upload Preview Modal -->
+<!-- Excel Upload Modal -->
 <div class="modal-overlay" id="excelModal">
-    <div class="modal" style="max-width:700px;max-height:80vh;display:flex;flex-direction:column;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <h3 style="margin-bottom:0;">📤 Bulk Upload Users</h3>
-            <button onclick="closeModal('excelModal')" style="background:transparent;border:none;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;" title="Close">✕</button>
-        </div>
-        <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;margin-top:-10px;">Review users before creating. Download the template to get started.</p>
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-shrink:0;">
-            <button class="btn-submit" style="flex:none;padding:8px 16px;font-size:13px;" onclick="downloadTemplate()">⬇ Download Template</button>
-            <span style="font-size:13px;color:rgba(255,255,255,0.4);align-self:center;" id="excelFileName"></span>
-        </div>
-        <div style="flex:1;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:10px;margin-bottom:16px;">
-            <table style="width:100%;border-collapse:collapse;" id="excelPreviewTable">
-                <thead>
-                    <tr style="background:rgba(0,0,0,0.3);">
-                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Name</th>
-                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Email</th>
-                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Password</th>
-                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Projects</th>
-                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Role</th>
-                        <th style="padding:10px 12px;text-align:left;font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="excelPreviewBody">
-                    <tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px;">Upload an Excel file to preview users</td></tr>
-                </tbody>
-            </table>
-        </div>
-        <div id="excelUploadProgress" style="display:none;margin-bottom:12px;">
-            <div style="background:rgba(255,255,255,0.1);border-radius:20px;height:6px;overflow:hidden;">
-                <div id="excelProgressBar" style="height:100%;background:#e91e8c;border-radius:20px;width:0%;transition:width 0.3s;"></div>
-            </div>
-            <p id="excelProgressText" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:6px;text-align:center;"></p>
-        </div>
-        <div class="modal-actions" style="flex-shrink:0;">
-            <button class="btn-cancel" onclick="closeModal('excelModal')">Cancel</button>
-            <button class="btn-submit" id="excelUploadBtn" onclick="bulkCreateUsers()" disabled>Create All Users</button>
-        </div>
+  <div class="modal" style="max-width:700px;max-height:80vh;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin-bottom:0;">📤 Bulk Upload Users</h3>
+      <button onclick="closeModal('excelModal')" style="background:transparent;border:none;color:#aab4be;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;" title="Close">✕</button>
     </div>
+    <p style="font-size:13px;color:#7f8c8d;margin-bottom:16px;">Review users before creating. Download the template to get started.</p>
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-shrink:0;">
+      <button class="btn-submit" style="flex:none;padding:8px 16px;font-size:13px;" onclick="downloadTemplate()">⬇ Download Template</button>
+      <span style="font-size:13px;color:#aab4be;align-self:center;" id="excelFileName"></span>
+    </div>
+    <div style="flex:1;overflow-y:auto;border:1px solid #e8ecef;border-radius:8px;margin-bottom:16px;">
+      <table style="width:100%;border-collapse:collapse;" id="excelPreviewTable">
+        <thead><tr style="background:#f5f7fa;">
+          <th style="padding:10px 12px;text-align:left;font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8ecef;">Name</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8ecef;">Email</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8ecef;">Password</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8ecef;">Projects</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8ecef;">Role</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8ecef;">Status</th>
+        </tr></thead>
+        <tbody id="excelPreviewBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:#aab4be;font-size:13px;">Upload an Excel file to preview users</td></tr></tbody>
+      </table>
+    </div>
+    <div id="excelUploadProgress" style="display:none;margin-bottom:12px;">
+      <div style="background:#e8ecef;border-radius:20px;height:6px;overflow:hidden;">
+        <div id="excelProgressBar" style="height:100%;background:#2196a6;border-radius:20px;width:0%;transition:width 0.3s;"></div>
+      </div>
+      <p id="excelProgressText" style="font-size:12px;color:#7f8c8d;margin-top:6px;text-align:center;"></p>
+    </div>
+    <div class="modal-actions" style="flex-shrink:0;">
+      <button class="btn-cancel" onclick="closeModal('excelModal')">Cancel</button>
+      <button class="btn-submit" id="excelUploadBtn" onclick="bulkCreateUsers()" disabled>Create All Users</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -426,449 +336,324 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyD77O5jlRji43PruIH9K4uusvFCJQxAbxQ",
-        authDomain: "livechatapp-b5399.firebaseapp.com",
-        projectId: "livechatapp-b5399",
-        storageBucket: "livechatapp-b5399.firebasestorage.app",
-        messagingSenderId: "738890891030",
-        appId: "1:738890891030:web:55fd84416375761f955a37"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const secondaryApp = firebase.initializeApp(firebaseConfig, "secondary");
-    const db = firebase.firestore();
-    const ADMIN_UID = "SZvYG7wbQ9TzgWySvLwVU240reD3";
+const firebaseConfig={apiKey:"AIzaSyD77O5jlRji43PruIH9K4uusvFCJQxAbxQ",authDomain:"livechatapp-b5399.firebaseapp.com",projectId:"livechatapp-b5399",storageBucket:"livechatapp-b5399.firebasestorage.app",messagingSenderId:"738890891030",appId:"1:738890891030:web:55fd84416375761f955a37"};
+firebase.initializeApp(firebaseConfig);
+const secondaryApp=firebase.initializeApp(firebaseConfig,"secondary");
+const db=firebase.firestore();
+const ADMIN_UID="SZvYG7wbQ9TzgWySvLwVU240reD3";
+let projects=[],users=[];
 
-    let projects = [];
-    let users = [];
+function toggleAdminPw(btn){const i=document.getElementById("adminPassword");if(i.type==="password"){i.type="text";btn.textContent="🙈";}else{i.type="password";btn.textContent="👁";}}
 
-    // ── Tab switching ──
-    function switchTab(name) {
-        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        document.getElementById("tab-" + name).classList.add("active");
-        event.currentTarget.classList.add("active");
-    }
+function switchTab(name,btn){
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+name).classList.add("active");
+  btn.classList.add("active");
+}
 
-    firebase.auth().onAuthStateChanged(async function(user) {
-        if (user && user.uid === ADMIN_UID) {
-            document.getElementById("loginScreen").style.display = "none";
-            document.getElementById("dashboard").style.display = "block";
-            document.getElementById("adminName").textContent = user.displayName || user.email;
-            await loadProjects();
-            await loadUsers();
-        }
+firebase.auth().onAuthStateChanged(async function(user){
+  if(user&&user.uid===ADMIN_UID){
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("dashboard").style.display="block";
+    document.getElementById("adminName").textContent=user.email;
+    await loadProjects();await loadUsers();
+  }
+});
+
+async function adminLogin(){
+  const email=document.getElementById("adminEmail").value.trim();
+  const password=document.getElementById("adminPassword").value;
+  const btn=document.getElementById("loginBtn");
+  if(!email||!password){showError("Please fill in all fields");return;}
+  btn.disabled=true;btn.textContent="Signing in...";hideError();
+  try{
+    const cred=await firebase.auth().signInWithEmailAndPassword(email,password);
+    if(cred.user.uid!==ADMIN_UID){await firebase.auth().signOut();showError("Access denied.");btn.disabled=false;btn.textContent="Sign in →";}
+  }catch(e){showError(getErrMsg(e.code));btn.disabled=false;btn.textContent="Sign in →";}
+}
+
+function logout(){firebase.auth().signOut().then(()=>window.location.href="/home.html");}
+function openModal(id){if(id==="userModal")fillChecklist("newUserProjectList",[]);document.getElementById(id).classList.add("active");}
+function closeModal(id){document.getElementById(id).classList.remove("active");}
+
+function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),3000);}
+
+document.querySelectorAll(".modal-overlay").forEach(el=>{
+  el.addEventListener("click",e=>{if(e.target===el){if(el.id==="msgModal")closeAdminChat();else closeModal(el.id);}});
+});
+
+function fillChecklist(containerId,selectedIds){
+  const container=document.getElementById(containerId);
+  if(!projects.length){container.innerHTML='<div style="color:#aab4be;padding:8px;font-size:13px;">No projects yet</div>';return;}
+  container.innerHTML=projects.map(p=>`<label class="check-item"><input type="checkbox" value="${p.id}" ${selectedIds.includes(p.id)?"checked":""} /><span>${p.name}</span></label>`).join("");
+}
+
+function getCheckedProjects(containerId){
+  return Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`))
+    .map(cb=>({id:cb.value,name:projects.find(p=>p.id===cb.value)?.name||cb.value}));
+}
+
+async function loadProjects(){
+  const snap=await db.collection("projects").orderBy("created","desc").get();
+  projects=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderProjects();
+}
+
+async function createProject(){
+  const name=document.getElementById("projectName").value.trim();
+  const desc=document.getElementById("projectDesc").value.trim();
+  if(!name){alert("Project name is required");return;}
+  await db.collection("projects").add({name,desc,created:new Date().toISOString(),status:"active"});
+  document.getElementById("projectName").value="";document.getElementById("projectDesc").value="";
+  closeModal("projectModal");await loadProjects();showToast("✅ Project created");
+}
+
+function editProject(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  document.getElementById("editProjectId").value=id;
+  document.getElementById("editProjectName").value=p.name;
+  document.getElementById("editProjectDesc").value=p.desc||"";
+  document.getElementById("editProjectModal").classList.add("active");
+}
+
+async function saveEditProject(){
+  const id=document.getElementById("editProjectId").value;
+  const name=document.getElementById("editProjectName").value.trim();
+  const desc=document.getElementById("editProjectDesc").value.trim();
+  if(!name){alert("Name required");return;}
+  await db.collection("projects").doc(id).update({name,desc});
+  closeModal("editProjectModal");await loadProjects();showToast("✅ Project updated");
+}
+
+async function deleteProject(id){
+  if(!confirm("Delete this project?"))return;
+  await db.collection("projects").doc(id).delete();await loadProjects();
+}
+
+function renderProjects(){
+  const tbody=document.getElementById("projectsTableBody");
+  if(!projects.length){tbody.innerHTML=`<tr><td colspan="5" class="empty-state">No projects yet.</td></tr>`;return;}
+  tbody.innerHTML=projects.map(p=>`<tr>
+    <td style="font-weight:600;color:#1e2a35;">${p.name}</td>
+    <td>${p.desc||"—"}</td>
+    <td>${new Date(p.created).toLocaleDateString()}</td>
+    <td><span class="badge badge-active">${p.status}</span></td>
+    <td style="display:flex;gap:6px;">
+      <button class="btn-action btn-edit" onclick="editProject('${p.id}')">Edit</button>
+      <button class="btn-action btn-delete" onclick="deleteProject('${p.id}')">Delete</button>
+    </td>
+  </tr>`).join("");
+}
+
+async function loadUsers(){
+  const snap=await db.collection("users").orderBy("created","desc").get();
+  users=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderUsers();
+}
+
+async function createUser(){
+  const name=document.getElementById("newUserName").value.trim();
+  const email=document.getElementById("newUserEmail").value.trim();
+  const password=document.getElementById("newUserPassword").value;
+  const selectedProjects=getCheckedProjects("newUserProjectList");
+  const role=document.getElementById("newUserRole").value;
+  const btn=document.getElementById("createUserBtn");
+  if(!name||!email||!password){alert("All fields required");return;}
+  if(!selectedProjects.length){alert("Select at least one project");return;}
+  if(password.length<6){alert("Password min 6 characters");return;}
+  btn.disabled=true;btn.textContent="Creating...";
+  try{
+    const cred=await secondaryApp.auth().createUserWithEmailAndPassword(email,password);
+    await cred.user.updateProfile({displayName:name});
+    await secondaryApp.auth().signOut();
+    await db.collection("users").doc(cred.user.uid).set({name,email,role,projectId:selectedProjects[0].id,projectName:selectedProjects[0].name,projects:selectedProjects,created:new Date().toISOString()});
+    document.getElementById("newUserName").value="";document.getElementById("newUserEmail").value="";document.getElementById("newUserPassword").value="";document.getElementById("newUserRole").value="member";
+    closeModal("userModal");await loadUsers();showToast(`✅ User "${name}" created`);
+  }catch(e){alert("Error: "+e.message);}
+  finally{btn.disabled=false;btn.textContent="Create";}
+}
+
+function editUser(uid){
+  const u=users.find(x=>x.id===uid);if(!u)return;
+  document.getElementById("editUserId").value=uid;
+  document.getElementById("editUserName").value=u.name;
+  document.getElementById("editUserRole").value=u.role||"member";
+  const selectedIds=u.projects?u.projects.map(p=>p.id):(u.projectId?[u.projectId]:[]);
+  fillChecklist("editUserProjectList",selectedIds);
+  document.getElementById("editUserModal").classList.add("active");
+}
+
+async function saveEditUser(){
+  const uid=document.getElementById("editUserId").value;
+  const name=document.getElementById("editUserName").value.trim();
+  const role=document.getElementById("editUserRole").value;
+  const selectedProjects=getCheckedProjects("editUserProjectList");
+  if(!name){alert("Name required");return;}
+  if(!selectedProjects.length){alert("Select at least one project");return;}
+  await db.collection("users").doc(uid).update({name,role,projectId:selectedProjects[0].id,projectName:selectedProjects[0].name,projects:selectedProjects});
+  await loadUsers();closeModal("editUserModal");showToast("✅ User updated");
+}
+
+async function deleteUser(uid,name){
+  if(!confirm(`Remove "${name}"?\n\nAlso delete from Firebase Console > Authentication.`))return;
+  await db.collection("users").doc(uid).delete();await loadUsers();
+}
+
+function renderUsers(){
+  const tbody=document.getElementById("usersTableBody");
+  if(!users.length){tbody.innerHTML=`<tr><td colspan="6" class="empty-state">No users yet.</td></tr>`;return;}
+  tbody.innerHTML=users.map(u=>{
+    const projectList=u.projects&&u.projects.length?u.projects.map(p=>`<span class="badge badge-project">${p.name}</span>`).join(""):
+      `<span class="badge badge-project">${u.projectName||u.projectId||"—"}</span>`;
+    const role=u.role||"member";
+    return `<tr>
+      <td style="font-weight:600;color:#1e2a35;">${u.name}</td>
+      <td>${u.email}</td>
+      <td><span class="badge badge-${role}">${role.charAt(0).toUpperCase()+role.slice(1)}</span></td>
+      <td>${projectList}</td>
+      <td>${new Date(u.created).toLocaleDateString()}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn-action btn-msg" onclick="openMsgModal('${u.id}','${u.name}')">Message</button>
+        <button class="btn-action btn-edit" onclick="editUser('${u.id}')">Edit</button>
+        <button class="btn-action btn-delete" onclick="deleteUser('${u.id}','${u.name}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+let adminChatUnsub=null;
+function openMsgModal(uid,name){
+  document.getElementById("msgTargetUid").value=uid;
+  document.getElementById("msgTargetName").textContent=name;
+  document.getElementById("adminChatInput").value="";
+  document.getElementById("msgModal").classList.add("active");
+  if(adminChatUnsub){adminChatUnsub();adminChatUnsub=null;}
+  adminChatUnsub=db.collection("adminMessages").doc(uid).collection("chats").orderBy("timestamp","asc").onSnapshot(snap=>{
+    const container=document.getElementById("adminChatMessages");
+    if(snap.empty){container.innerHTML='<div style="color:#aab4be;font-size:13px;text-align:center;padding:20px;">No messages yet.</div>';return;}
+    let html="";let lastDate=null;
+    snap.docs.forEach(doc=>{
+      const d=doc.data();
+      const date=d.timestamp?d.timestamp.toDate():new Date();
+      const today=new Date();const yesterday=new Date();yesterday.setDate(today.getDate()-1);
+      const label=date.toDateString()===today.toDateString()?"Today":date.toDateString()===yesterday.toDateString()?"Yesterday":date.toLocaleDateString([],{day:"numeric",month:"short"});
+      if(label!==lastDate){lastDate=label;html+=`<div class="acm-date-sep">${label}</div>`;}
+      const time=date.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+      const isAdmin=d.from==="Admin";
+      html+=`<div class="acm-row ${isAdmin?'right':'left'}"><div class="acm-bubble ${isAdmin?'from-admin':'from-user'}">${d.text}</div><div class="acm-meta">${isAdmin?'You':d.from||'User'} · ${time}</div></div>`;
     });
+    container.innerHTML=html;
+    container.scrollTop=container.scrollHeight;
+  });
+  document.getElementById("adminChatInput").onkeypress=e=>{if(e.key==="Enter")sendAdminMessage();};
+}
 
-    async function adminLogin() {
-        const email = document.getElementById("adminEmail").value.trim();
-        const password = document.getElementById("adminPassword").value;
-        const btn = document.getElementById("loginBtn");
-        if (!email || !password) { showError("Please fill in all fields"); return; }
-        btn.disabled = true; btn.textContent = "Logging in..."; hideError();
-        try {
-            const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-            if (cred.user.uid !== ADMIN_UID) {
-                await firebase.auth().signOut();
-                showError("Access denied. Not an admin account.");
-                btn.disabled = false; btn.textContent = "Login";
-            }
-        } catch (e) {
-            showError(getErrMsg(e.code));
-            btn.disabled = false; btn.textContent = "Login";
-        }
+async function sendAdminMessage(){
+  const uid=document.getElementById("msgTargetUid").value;
+  const text=document.getElementById("adminChatInput").value.trim();
+  if(!text)return;
+  document.getElementById("adminChatInput").value="";
+  await db.collection("adminMessages").doc(uid).collection("chats").add({text,from:"Admin",timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+}
+
+function closeAdminChat(){if(adminChatUnsub){adminChatUnsub();adminChatUnsub=null;}closeModal("msgModal");}
+
+// ── Excel Bulk Upload ──
+let excelUsers=[];
+document.getElementById("excelFileInput").addEventListener("change",function(e){
+  const file=e.target.files[0];if(!file)return;
+  document.getElementById("excelFileName").textContent=file.name;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(ev.target.result,{type:"array"});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+      excelUsers=rows.map(r=>({
+        name:String(r["Name"]||r["name"]||"").trim(),
+        email:String(r["Email"]||r["email"]||"").trim(),
+        password:String(r["Password"]||r["password"]||"").trim(),
+        projectNames:String(r["Projects"]||r["projects"]||"").trim(),
+        role:String(r["Role"]||r["role"]||"member").toLowerCase().includes("viewer")?"viewer":"member"
+      })).filter(u=>u.name&&u.email&&u.password);
+      renderExcelPreview();
+      document.getElementById("excelModal").classList.add("active");
+      document.getElementById("excelUploadBtn").disabled=excelUsers.length===0;
+    }catch(err){alert("Could not read Excel file. Make sure it's a valid .xlsx file.");console.error(err);}
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value="";
+});
+
+function renderExcelPreview(){
+  const tbody=document.getElementById("excelPreviewBody");
+  if(!excelUsers.length){tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:30px;color:#aab4be;font-size:13px;">No valid rows found.</td></tr>`;return;}
+  tbody.innerHTML=excelUsers.map((u,i)=>`<tr id="excel-row-${i}" style="border-top:1px solid #f5f7fa;">
+    <td style="padding:10px 12px;font-size:13px;color:#1e2a35;font-weight:500;">${u.name}</td>
+    <td style="padding:10px 12px;font-size:13px;color:#4a5568;">${u.email}</td>
+    <td style="padding:10px 12px;font-size:13px;color:#aab4be;">••••••</td>
+    <td style="padding:10px 12px;font-size:13px;color:#4a5568;">${u.projectNames||"—"}</td>
+    <td style="padding:10px 12px;"><span class="badge badge-${u.role}">${u.role.charAt(0).toUpperCase()+u.role.slice(1)}</span></td>
+    <td style="padding:10px 12px;font-size:12px;color:#aab4be;" id="excel-status-${i}">Pending</td>
+  </tr>`).join("");
+}
+
+async function bulkCreateUsers(){
+  if(!excelUsers.length)return;
+  const btn=document.getElementById("excelUploadBtn");
+  btn.disabled=true;btn.textContent="Creating...";
+  document.getElementById("excelUploadProgress").style.display="block";
+  let success=0,failed=0;
+  for(let i=0;i<excelUsers.length;i++){
+    const u=excelUsers[i];
+    const statusEl=document.getElementById(`excel-status-${i}`);
+    document.getElementById("excelProgressBar").style.width=`${Math.round((i/excelUsers.length)*100)}%`;
+    document.getElementById("excelProgressText").textContent=`Creating ${i+1} of ${excelUsers.length}...`;
+    try{
+      const projectNameList=u.projectNames.split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
+      const matchedProjects=projectNameList.map(pname=>{const found=projects.find(p=>p.name.toLowerCase()===pname.toLowerCase());return found?{id:found.id,name:found.name}:null;}).filter(Boolean);
+      const selectedProjects=matchedProjects.length?matchedProjects:(projects.length?[{id:projects[0].id,name:projects[0].name}]:[]);
+      const cred=await secondaryApp.auth().createUserWithEmailAndPassword(u.email,u.password);
+      await cred.user.updateProfile({displayName:u.name});
+      await secondaryApp.auth().signOut();
+      await db.collection("users").doc(cred.user.uid).set({name:u.name,email:u.email,role:u.role,projectId:selectedProjects[0]?.id||"",projectName:selectedProjects[0]?.name||"",projects:selectedProjects,created:new Date().toISOString()});
+      statusEl.textContent="✅ Created";statusEl.style.color="#2e7d32";success++;
+    }catch(err){
+      statusEl.textContent="❌ "+(err.code==="auth/email-already-in-use"?"Already exists":err.message);
+      statusEl.style.color="#dc2626";failed++;
     }
+  }
+  document.getElementById("excelProgressBar").style.width="100%";
+  document.getElementById("excelProgressText").textContent=`Done — ${success} created, ${failed} failed`;
+  btn.textContent="Done";
+  await loadUsers();
+  showToast(`✅ Bulk upload: ${success} users created`);
+}
 
-    function logout() { firebase.auth().signOut().then(() => window.location.href = "/home.html"); }
+function downloadTemplate(){
+  const ws=XLSX.utils.aoa_to_sheet([
+    ["Name","Email","Password","Projects","Role"],
+    ["John Doe","john@company.com","password123","Frontend Team","Member"],
+    ["Jane Smith","jane@company.com","password123","Backend Team","Viewer"]
+  ]);
+  ws["!cols"]=[{wch:20},{wch:25},{wch:15},{wch:25},{wch:10}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Users");
+  XLSX.writeFile(wb,"TeamChat_Users_Template.xlsx");
+}
 
-    function openModal(id) {
-        if (id === "userModal") fillChecklist("newUserProjectList", []);
-        document.getElementById(id).classList.add("active");
-    }
-    function closeModal(id) { document.getElementById(id).classList.remove("active"); }
-
-    function showToast(msg) {
-        const t = document.getElementById("toast");
-        t.textContent = msg;
-        t.classList.add("show");
-        setTimeout(() => t.classList.remove("show"), 3000);
-    }
-    document.querySelectorAll(".modal-overlay").forEach(el => {
-        el.addEventListener("click", e => {
-            if (e.target === el) {
-                if (el.id === "msgModal") closeAdminChat();
-                else closeModal(el.id);
-            }
-        });
-    });
-
-    // ── Multi-project checklist ──
-    function fillChecklist(containerId, selectedIds) {
-        const container = document.getElementById(containerId);
-        if (!projects.length) { container.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:10px;font-size:13px;">No projects available</div>'; return; }
-        container.innerHTML = projects.map(p => `
-            <label class="check-item">
-                <input type="checkbox" value="${p.id}" ${selectedIds.includes(p.id) ? "checked" : ""} />
-                <span>${p.name}</span>
-            </label>`).join("");
-    }
-
-    function getCheckedProjects(containerId) {
-        return Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`))
-            .map(cb => ({ id: cb.value, name: projects.find(p => p.id === cb.value)?.name || cb.value }));
-    }
-
-    // ── Projects ──
-    async function loadProjects() {
-        const snap = await db.collection("projects").orderBy("created", "desc").get();
-        projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderProjects();
-    }
-
-    async function createProject() {
-        const name = document.getElementById("projectName").value.trim();
-        const desc = document.getElementById("projectDesc").value.trim();
-        if (!name) { alert("Project name is required"); return; }
-        await db.collection("projects").add({ name, desc, created: new Date().toISOString(), status: "active" });
-        document.getElementById("projectName").value = "";
-        document.getElementById("projectDesc").value = "";
-        closeModal("projectModal");
-        await loadProjects();
-        showToast("✅ Project created");
-    }
-
-    function editProject(id) {
-        const p = projects.find(x => x.id === id);
-        if (!p) return;
-        document.getElementById("editProjectId").value = id;
-        document.getElementById("editProjectName").value = p.name;
-        document.getElementById("editProjectDesc").value = p.desc || "";
-        document.getElementById("editProjectModal").classList.add("active");
-    }
-
-    async function saveEditProject() {
-        const id = document.getElementById("editProjectId").value;
-        const name = document.getElementById("editProjectName").value.trim();
-        const desc = document.getElementById("editProjectDesc").value.trim();
-        if (!name) { alert("Project name is required"); return; }
-        await db.collection("projects").doc(id).update({ name, desc });
-        closeModal("editProjectModal");
-        await loadProjects();
-        showToast("✅ Project updated");
-    }
-
-    async function deleteProject(id) {
-        if (!confirm("Delete this project?")) return;
-        await db.collection("projects").doc(id).delete();
-        await loadProjects();
-    }
-
-    function renderProjects() {
-        const tbody = document.getElementById("projectsTableBody");
-        if (!projects.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No projects yet.</td></tr>`; return; }
-        tbody.innerHTML = projects.map(p => `<tr>
-            <td>${p.name}</td><td>${p.desc || "—"}</td>
-            <td>${new Date(p.created).toLocaleDateString()}</td>
-            <td><span class="badge badge-active">${p.status}</span></td>
-            <td style="display:flex;gap:6px;">
-                <button class="btn-action btn-edit" onclick="editProject('${p.id}')">Edit</button>
-                <button class="btn-action btn-delete" onclick="deleteProject('${p.id}')">Delete</button>
-            </td>
-        </tr>`).join("");
-    }
-
-    // ── Users ──
-    async function loadUsers() {
-        const snap = await db.collection("users").orderBy("created", "desc").get();
-        users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderUsers();
-    }
-
-    async function createUser() {
-        const name = document.getElementById("newUserName").value.trim();
-        const email = document.getElementById("newUserEmail").value.trim();
-        const password = document.getElementById("newUserPassword").value;
-        const selectedProjects = getCheckedProjects("newUserProjectList");
-        const role = document.getElementById("newUserRole").value;
-        const btn = document.getElementById("createUserBtn");
-        if (!name || !email || !password) { alert("All fields are required"); return; }
-        if (!selectedProjects.length) { alert("Please select at least one project"); return; }
-        if (password.length < 6) { alert("Password must be at least 6 characters"); return; }
-        btn.disabled = true; btn.textContent = "Creating...";
-        try {
-            const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
-            await cred.user.updateProfile({ displayName: name });
-            await secondaryApp.auth().signOut();
-            await db.collection("users").doc(cred.user.uid).set({
-                name, email, role,
-                projectId: selectedProjects[0].id,
-                projectName: selectedProjects[0].name,
-                projects: selectedProjects,
-                created: new Date().toISOString()
-            });
-            document.getElementById("newUserName").value = "";
-            document.getElementById("newUserEmail").value = "";
-            document.getElementById("newUserPassword").value = "";
-            document.getElementById("newUserRole").value = "member";
-            closeModal("userModal");
-            await loadUsers();
-            showToast(`✅ User "${name}" created`);
-        } catch (e) {
-            alert("Error: " + e.message);
-        } finally {
-            btn.disabled = false; btn.textContent = "Create";
-        }
-    }
-
-    function editUser(uid) {
-        const u = users.find(x => x.id === uid);
-        if (!u) return;
-        document.getElementById("editUserId").value = uid;
-        document.getElementById("editUserName").value = u.name;
-        document.getElementById("editUserRole").value = u.role || "member";
-        const selectedIds = u.projects ? u.projects.map(p => p.id) : (u.projectId ? [u.projectId] : []);
-        fillChecklist("editUserProjectList", selectedIds);
-        document.getElementById("editUserModal").classList.add("active");
-    }
-
-    async function saveEditUser() {
-        const uid = document.getElementById("editUserId").value;
-        const name = document.getElementById("editUserName").value.trim();
-        const role = document.getElementById("editUserRole").value;
-        const selectedProjects = getCheckedProjects("editUserProjectList");
-        if (!name) { alert("Name is required"); return; }
-        if (!selectedProjects.length) { alert("Select at least one project"); return; }
-        await db.collection("users").doc(uid).update({
-            name, role,
-            projectId: selectedProjects[0].id,
-            projectName: selectedProjects[0].name,
-            projects: selectedProjects
-        });
-        await loadUsers();
-        closeModal("editUserModal");
-        showToast("✅ User updated");
-    }
-
-    async function deleteUser(uid, name) {
-        if (!confirm(`Remove "${name}"?\n\nAlso delete from Firebase Console > Authentication to revoke login.`)) return;
-        await db.collection("users").doc(uid).delete();
-        await loadUsers();
-    }
-
-    function renderUsers() {
-        const tbody = document.getElementById("usersTableBody");
-        if (!users.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No users yet.</td></tr>`; return; }
-        tbody.innerHTML = users.map(u => {
-            const projectList = u.projects && u.projects.length
-                ? u.projects.map(p => `<span class="badge badge-project">${p.name}</span>`).join("")
-                : `<span class="badge badge-project">${u.projectName || u.projectId}</span>`;
-            const role = u.role || "member";
-            const roleBadge = `<span class="badge badge-${role}">${role.charAt(0).toUpperCase() + role.slice(1)}</span>`;
-            return `<tr>
-                <td>${u.name}</td><td>${u.email}</td>
-                <td>${roleBadge}</td>
-                <td>${projectList}</td>
-                <td>${new Date(u.created).toLocaleDateString()}</td>
-                <td style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="btn-action btn-msg" onclick="openMsgModal('${u.id}','${u.name}')">Message</button>
-                    <button class="btn-action btn-edit" onclick="editUser('${u.id}')">Edit</button>
-                    <button class="btn-action btn-delete" onclick="deleteUser('${u.id}','${u.name}')">Delete</button>
-                </td>
-            </tr>`;
-        }).join("");
-    }
-
-    // ── Admin live chat ──
-    let adminChatUnsub = null;
-
-    function openMsgModal(uid, name) {
-        document.getElementById("msgTargetUid").value = uid;
-        document.getElementById("msgTargetName").textContent = name;
-        document.getElementById("adminChatInput").value = "";
-        document.getElementById("msgModal").classList.add("active");
-        // unsubscribe previous listener
-        if (adminChatUnsub) { adminChatUnsub(); adminChatUnsub = null; }
-        // listen real-time
-        adminChatUnsub = db.collection("adminMessages").doc(uid)
-            .collection("chats").orderBy("timestamp", "asc")
-            .onSnapshot(snap => {
-                const container = document.getElementById("adminChatMessages");
-                if (snap.empty) { container.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:20px;">No messages yet. Say hi!</div>'; return; }
-                let html = ""; let lastDate = null;
-                snap.docs.forEach(doc => {
-                    const d = doc.data();
-                    const date = d.timestamp ? d.timestamp.toDate() : new Date();
-                    const dateLabel = getAdminDateLabel(date);
-                    if (dateLabel !== lastDate) {
-                        lastDate = dateLabel;
-                        html += `<div class="acm-date-sep">${dateLabel}</div>`;
-                    }
-                    const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                    const isAdmin = d.from === "Admin";
-                    html += `<div>
-                        <div class="acm-bubble ${isAdmin ? 'from-admin' : 'from-user'}">${d.text}</div>
-                        <div class="acm-meta ${isAdmin ? '' : 'left'}">${isAdmin ? 'You' : d.from || 'User'} · ${time}</div>
-                    </div>`;
-                });
-                container.innerHTML = html;
-                container.scrollTop = container.scrollHeight;
-            });
-        // enter key to send
-        document.getElementById("adminChatInput").onkeypress = function(e) {
-            if (e.key === "Enter") sendAdminMessage();
-        };
-    }
-
-    function getAdminDateLabel(date) {
-        const today = new Date(); const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
-        if (date.toDateString() === today.toDateString()) return "Today";
-        if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-        return date.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
-    }
-
-    async function sendAdminMessage() {
-        const uid = document.getElementById("msgTargetUid").value;
-        const text = document.getElementById("adminChatInput").value.trim();
-        if (!text) return;
-        document.getElementById("adminChatInput").value = "";
-        await db.collection("adminMessages").doc(uid).collection("chats").add({
-            text, from: "Admin",
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }
-
-    function closeAdminChat() {
-        if (adminChatUnsub) { adminChatUnsub(); adminChatUnsub = null; }
-        closeModal("msgModal");
-    }
-
-    // ── Excel Bulk Upload ──
-    let excelUsers = [];
-
-    document.getElementById("excelFileInput").addEventListener("change", function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        document.getElementById("excelFileName").textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            try {
-                const wb = XLSX.read(ev.target.result, { type: "array" });
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-                excelUsers = rows.map(r => ({
-                    name: String(r["Name"] || r["name"] || "").trim(),
-                    email: String(r["Email"] || r["email"] || "").trim(),
-                    password: String(r["Password"] || r["password"] || "").trim(),
-                    projectNames: String(r["Projects"] || r["projects"] || "").trim(),
-                    role: String(r["Role"] || r["role"] || "member").toLowerCase().includes("viewer") ? "viewer" : "member"
-                })).filter(u => u.name && u.email && u.password);
-
-                renderExcelPreview();
-                document.getElementById("excelModal").classList.add("active");
-                document.getElementById("excelUploadBtn").disabled = excelUsers.length === 0;
-            } catch(err) {
-                alert("Could not read Excel file. Make sure it's a valid .xlsx file.");
-                console.error(err);
-            }
-        };
-        reader.readAsArrayBuffer(file);
-        e.target.value = "";
-    });
-
-    function renderExcelPreview() {
-        const tbody = document.getElementById("excelPreviewBody");
-        if (!excelUsers.length) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px;">No valid rows found. Check your Excel format.</td></tr>`;
-            return;
-        }
-        tbody.innerHTML = excelUsers.map((u, i) => `<tr id="excel-row-${i}" style="border-top:1px solid rgba(255,255,255,0.07);">
-            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.85);">${u.name}</td>
-            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.65);">${u.email}</td>
-            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.4);">••••••</td>
-            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.65);">${u.projectNames || "—"}</td>
-            <td style="padding:10px 12px;"><span style="background:rgba(100,149,237,0.15);color:#6495ed;border:1px solid rgba(100,149,237,0.3);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;">${u.role.charAt(0).toUpperCase()+u.role.slice(1)}</span></td>
-            <td style="padding:10px 12px;font-size:12px;color:rgba(255,255,255,0.3);" id="excel-status-${i}">Pending</td>
-        </tr>`).join("");
-    }
-
-    async function bulkCreateUsers() {
-        if (!excelUsers.length) return;
-        const btn = document.getElementById("excelUploadBtn");
-        btn.disabled = true; btn.textContent = "Creating...";
-        document.getElementById("excelUploadProgress").style.display = "block";
-
-        let success = 0, failed = 0;
-        for (let i = 0; i < excelUsers.length; i++) {
-            const u = excelUsers[i];
-            const statusEl = document.getElementById(`excel-status-${i}`);
-            const rowEl = document.getElementById(`excel-row-${i}`);
-            // Update progress bar
-            document.getElementById("excelProgressBar").style.width = `${Math.round((i / excelUsers.length) * 100)}%`;
-            document.getElementById("excelProgressText").textContent = `Creating ${i + 1} of ${excelUsers.length}...`;
-            try {
-                // Match project names to project IDs
-                const projectNameList = u.projectNames.split(/[,;]+/).map(s => s.trim()).filter(Boolean);
-                const matchedProjects = projectNameList.map(pname => {
-                    const found = projects.find(p => p.name.toLowerCase() === pname.toLowerCase());
-                    return found ? { id: found.id, name: found.name } : null;
-                }).filter(Boolean);
-                const selectedProjects = matchedProjects.length ? matchedProjects : (projects.length ? [{ id: projects[0].id, name: projects[0].name }] : []);
-
-                const cred = await secondaryApp.auth().createUserWithEmailAndPassword(u.email, u.password);
-                await cred.user.updateProfile({ displayName: u.name });
-                await secondaryApp.auth().signOut();
-                await db.collection("users").doc(cred.user.uid).set({
-                    name: u.name, email: u.email, role: u.role,
-                    projectId: selectedProjects[0]?.id || "", projectName: selectedProjects[0]?.name || "",
-                    projects: selectedProjects, created: new Date().toISOString()
-                });
-                statusEl.textContent = "✅ Created";
-                statusEl.style.color = "#00e5a0";
-                success++;
-            } catch(err) {
-                statusEl.textContent = "❌ " + (err.code === "auth/email-already-in-use" ? "Already exists" : err.message);
-                statusEl.style.color = "#ff6b8a";
-                if (rowEl) rowEl.style.opacity = "0.5";
-                failed++;
-            }
-        }
-
-        document.getElementById("excelProgressBar").style.width = "100%";
-        document.getElementById("excelProgressText").textContent = `Done — ${success} created, ${failed} failed`;
-        btn.textContent = "Done";
-        await loadUsers();
-        showToast(`✅ Bulk upload: ${success} users created`);
-    }
-
-    function downloadTemplate() {
-        const ws = XLSX.utils.aoa_to_sheet([
-            ["Name", "Email", "Password", "Projects", "Role"],
-            ["John Doe", "john@company.com", "password123", "Frontend Team", "Member"],
-            ["Jane Smith", "jane@company.com", "password123", "Backend Team", "Viewer"]
-        ]);
-        ws["!cols"] = [{ wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 10 }];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Users");
-        XLSX.writeFile(wb, "TeamChat_Users_Template.xlsx");
-    }
-
-    function toggleAdminPw(btn) {
-        const inp = document.getElementById("adminPassword");
-        if (inp.type === "password") { inp.type = "text"; btn.textContent = "🙈"; }
-        else { inp.type = "password"; btn.textContent = "👁"; }
-    }
-
-    function showError(msg) { const el = document.getElementById("errorMsg"); el.textContent = msg; el.style.display = "block"; }
-    function hideError() { document.getElementById("errorMsg").style.display = "none"; }
-    function getErrMsg(code) {
-        switch(code) {
-            case "auth/user-not-found": return "No account found with this email";
-            case "auth/wrong-password": case "auth/invalid-credential": case "auth/invalid-login-credentials": return "Incorrect email or password";
-            case "auth/too-many-requests": return "Too many attempts. Try again later";
-            default: return "Login failed. Please try again";
-        }
-    }
-    document.getElementById("adminPassword").addEventListener("keypress", e => { if (e.key === "Enter") adminLogin(); });
+function showError(msg){const el=document.getElementById("errorMsg");el.textContent=msg;el.style.display="block";}
+function hideError(){document.getElementById("errorMsg").style.display="none";}
+function getErrMsg(code){
+  switch(code){
+    case"auth/user-not-found":return"No account found";
+    case"auth/wrong-password":case"auth/invalid-credential":case"auth/invalid-login-credentials":return"Incorrect email or password";
+    case"auth/too-many-requests":return"Too many attempts. Try again later";
+    default:return"Sign in failed";
+  }
+}
+document.getElementById("adminPassword").addEventListener("keypress",e=>{if(e.key==="Enter")adminLogin();});
 </script>
 </body>
 </html>

@@ -1,110 +1,131 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Chat - Welcome</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #4a3f6b 60%, #7b6fa0 80%, #a89bc2 100%);
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            height: 45%;
-            background: linear-gradient(180deg, transparent 0%, #2d1b4e 100%);
-            clip-path: polygon(0% 60%, 8% 40%, 15% 50%, 22% 30%, 30% 45%, 38% 20%, 45% 35%, 52% 15%, 60% 30%, 68% 10%, 75% 25%, 82% 5%, 90% 20%, 95% 10%, 100% 15%, 100% 100%, 0% 100%);
-            z-index: 0; opacity: 0.8;
-        }
-
-        .card {
-            position: relative;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
-            padding: 50px 40px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-
-        .logo { font-size: 48px; margin-bottom: 16px; }
-
-        h1 {
-            color: white;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: rgba(255,255,255,0.5);
-            font-size: 14px;
-            margin-bottom: 40px;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
-        .btn:hover { transform: scale(1.02); }
-        .btn:active { transform: scale(0.98); }
-
-        .btn-user {
-            background: #e91e8c;
-            color: white;
-            box-shadow: 0 4px 20px rgba(233,30,140,0.4);
-        }
-
-        .btn-user:hover { background: #c2185b; box-shadow: 0 6px 25px rgba(233,30,140,0.5); }
-
-        .btn-admin {
-            background: rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.85);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .btn-admin:hover { background: rgba(255,255,255,0.18); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeamChat — Enterprise Messaging</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#2c3e50;}
+nav{height:64px;background:#fff;border-bottom:1px solid #e8ecef;display:flex;align-items:center;padding:0 48px;position:sticky;top:0;z-index:10;}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:auto;}
+.nav-icon{width:34px;height:34px;background:#1e2a35;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.nav-name{font-size:17px;font-weight:800;color:#1e2a35;letter-spacing:-0.3px;}
+.nav-links{display:flex;gap:32px;margin-right:32px;}
+.nav-links a{font-size:14px;color:#7f8c8d;text-decoration:none;font-weight:500;transition:color 0.15s;}
+.nav-links a:hover{color:#2196a6;}
+.btn-ghost{padding:8px 20px;background:transparent;border:1.5px solid #d0d7de;color:#2c3e50;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.15s;}
+.btn-ghost:hover{border-color:#2196a6;color:#2196a6;}
+.btn-primary{padding:8px 20px;background:#2196a6;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:background 0.15s;margin-left:10px;}
+.btn-primary:hover{background:#1a7a8a;}
+.hero{background:#1e2a35;padding:80px 48px;display:flex;align-items:center;gap:80px;min-height:480px;}
+.hero-left{flex:1;max-width:520px;}
+.hero-tag{display:inline-block;background:rgba(33,150,166,0.2);color:#4dd0e1;border:1px solid rgba(33,150,166,0.3);border-radius:4px;padding:4px 12px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:24px;}
+.hero h1{font-size:48px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-1.5px;margin-bottom:20px;}
+.hero h1 span{color:#2196a6;}
+.hero p{font-size:16px;color:#8fa3b1;line-height:1.7;margin-bottom:36px;max-width:420px;}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;}
+.btn-hero{padding:13px 28px;background:#2196a6;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;transition:all 0.15s;}
+.btn-hero:hover{background:#1a7a8a;transform:translateY(-1px);}
+.btn-hero-outline{padding:13px 28px;background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,0.25);border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.15s;}
+.btn-hero-outline:hover{border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.05);}
+.hero-right{flex:1;max-width:480px;}
+.chat-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.3);}
+.cc-header{background:#2196a6;padding:14px 18px;display:flex;align-items:center;gap:10px;}
+.cc-dot{width:9px;height:9px;border-radius:50%;background:#4caf50;box-shadow:0 0 6px rgba(76,175,80,0.6);}
+.cc-title{font-size:14px;font-weight:700;color:#fff;}
+.cc-count{font-size:12px;color:rgba(255,255,255,0.65);margin-left:auto;}
+.cc-body{padding:18px;background:#f8f9fa;display:flex;flex-direction:column;gap:14px;}
+.cc-msg{display:flex;flex-direction:column;gap:4px;}
+.cc-user{font-size:11px;font-weight:700;color:#2196a6;}
+.cc-text{font-size:13px;color:#2c3e50;background:#fff;border:1px solid #e8ecef;border-radius:2px 10px 10px 10px;padding:9px 13px;display:inline-block;max-width:88%;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.cc-input{padding:12px 16px;border-top:1px solid #e8ecef;background:#fff;display:flex;gap:10px;align-items:center;}
+.cc-inp{flex:1;background:#f5f7fa;border:1px solid #e8ecef;border-radius:20px;padding:9px 16px;font-size:13px;color:#7f8c8d;}
+.cc-send{background:#2196a6;color:#fff;border:none;border-radius:20px;padding:9px 20px;font-size:12px;font-weight:700;cursor:pointer;}
+.stats{background:#f5f7fa;border-bottom:1px solid #e8ecef;padding:28px 48px;display:flex;}
+.stat{flex:1;text-align:center;border-right:1px solid #e8ecef;padding:0 20px;}
+.stat:last-child{border-right:none;}
+.stat-val{font-size:22px;font-weight:800;color:#2196a6;letter-spacing:-0.5px;}
+.stat-lbl{font-size:12px;color:#7f8c8d;margin-top:4px;}
+.features{padding:72px 48px;max-width:1100px;margin:0 auto;}
+.feat-eyebrow{font-size:11px;font-weight:700;color:#2196a6;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.feat-title{font-size:34px;font-weight:800;color:#1e2a35;letter-spacing:-0.8px;margin-bottom:10px;}
+.feat-sub{font-size:15px;color:#7f8c8d;max-width:500px;line-height:1.65;margin-bottom:48px;}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+.feat-card{background:#fff;border:1px solid #e8ecef;border-radius:10px;padding:28px;transition:all 0.2s;}
+.feat-card:hover{box-shadow:0 8px 32px rgba(33,150,166,0.12);border-color:#b2dfdb;transform:translateY(-2px);}
+.feat-icon{width:44px;height:44px;background:#e0f7fa;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px;}
+.feat-name{font-size:15px;font-weight:700;color:#1e2a35;margin-bottom:8px;}
+.feat-desc{font-size:13px;color:#7f8c8d;line-height:1.65;}
+footer{background:#1e2a35;padding:28px 48px;text-align:center;}
+footer p{font-size:13px;color:#8fa3b1;}
+@media(max-width:768px){.hero{flex-direction:column;padding:48px 24px;}.hero h1{font-size:32px;}.hero-right{display:none;}.nav-links{display:none;}.stats{flex-wrap:wrap;}.stat{min-width:50%;border-right:none;border-bottom:1px solid #e8ecef;padding:16px;}.feat-grid{grid-template-columns:1fr;}.features{padding:48px 24px;}}
+</style>
 </head>
 <body>
-    <div class="card">
-        <div class="logo">💬</div>
-        <h1>Live Chat</h1>
-        <p class="subtitle" style="display:none;"></p>
+<nav>
+  <a class="nav-brand" href="#">
+    <div class="nav-icon">💬</div>
+    <span class="nav-name">TeamChat</span>
+  </a>
+  <div class="nav-links">
+  </div>
+  <a class="btn-ghost" href="/admin.html">Admin</a>
+  <a class="btn-primary" href="/login.html">Sign in →</a>
+</nav>
 
-        <a class="btn btn-user" href="/login.html">
-            👤 User Login
-        </a>
-        <a class="btn btn-admin" href="/admin.html">
-            🛡️ Admin Login
-        </a>
+<div class="hero">
+  <div class="hero-left">
+    <div class="hero-tag">Enterprise Team Messaging</div>
+    <h1>Where teams <span>communicate</span> and get things done.</h1>
+    <p>Real-time chat, status updates, blockers, voice &amp; video calls — all in one secure workspace built for your team.</p>
+    <div class="hero-btns">
+      <a class="btn-hero" href="/login.html">Sign in to workspace →</a>
+      <a class="btn-hero-outline" href="/admin.html">Admin panel</a>
     </div>
+  </div>
+  <div class="hero-right">
+    <div class="chat-card">
+      <div class="cc-header">
+        <div class="cc-dot"></div>
+        <span class="cc-title">Frontend Team</span>
+        <span class="cc-count">4 online</span>
+      </div>
+      <div class="cc-body">
+        <div class="cc-msg"><span class="cc-user">Alex</span><span class="cc-text">PR is ready for review 🚀</span></div>
+        <div class="cc-msg"><span class="cc-user">Jordan</span><span class="cc-text">On it, checking now</span></div>
+        <div class="cc-msg"><span class="cc-user">Sam</span><span class="cc-text">Blocked on API — need backend access</span></div>
+        <div class="cc-msg"><span class="cc-user">Team Lead</span><span class="cc-text">📩 Sam, access granted. Check inbox.</span></div>
+      </div>
+      <div class="cc-input">
+        <div class="cc-inp">Type a message...</div>
+        <button class="cc-send">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val">Real-time</div><div class="stat-lbl">SignalR messaging</div></div>
+  <div class="stat"><div class="stat-val">Secure</div><div class="stat-lbl">Firebase Auth + isolation</div></div>
+  <div class="stat"><div class="stat-val">Roles</div><div class="stat-lbl">Member &amp; Viewer control</div></div>
+  <div class="stat"><div class="stat-val">Video</div><div class="stat-lbl">WebRTC calls &amp; screen share</div></div>
+</div>
+
+<div class="features">
+  <div class="feat-eyebrow">Platform Features</div>
+  <div class="feat-title">Everything your team needs</div>
+  <p class="feat-sub">Built for teams that need more than just chat — visibility, blockers, and direct admin communication in one place.</p>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-name">Real-time Chat</div><div class="feat-desc">Instant messaging with image sharing, typing indicators, and full history grouped by date.</div></div>
+    <div class="feat-card"><div class="feat-icon">📋</div><div class="feat-name">Status Updates</div><div class="feat-desc">Daily standup-style posts so the whole team knows what everyone is working on.</div></div>
+    <div class="feat-card"><div class="feat-icon">🚧</div><div class="feat-name">Blockers</div><div class="feat-desc">Flag blockers instantly so admins and teammates can act fast and keep projects moving.</div></div>
+    <div class="feat-card"><div class="feat-icon">📩</div><div class="feat-name">Admin Inbox</div><div class="feat-desc">Admins message users directly. Users reply from their Inbox tab — private and persistent.</div></div>
+    <div class="feat-card"><div class="feat-icon">📹</div><div class="feat-name">Video &amp; Voice Calls</div><div class="feat-desc">WebRTC peer-to-peer audio and video calls with screen sharing — no third-party tools.</div></div>
+    <div class="feat-card"><div class="feat-icon">🛡️</div><div class="feat-name">Access Control</div><div class="feat-desc">Member and Viewer roles. Admins manage users, projects, and assignments centrally.</div></div>
+  </div>
+</div>
+
+<footer><p>© 2026 TeamChat. Built with ASP.NET Core + SignalR + Firebase.</p></footer>
 </body>
 </html>
