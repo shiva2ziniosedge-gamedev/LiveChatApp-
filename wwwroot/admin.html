@@ -3,249 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Live Chat</title>
+    <title>Admin Panel — TeamChat</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #4a3f6b 60%, #7b6fa0 80%, #a89bc2 100%);
-            background-attachment: fixed;
-        }
-        body::before {
-            content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 45%;
-            background: linear-gradient(180deg, transparent 0%, #2d1b4e 100%);
-            clip-path: polygon(0% 60%, 8% 40%, 15% 50%, 22% 30%, 30% 45%, 38% 20%, 45% 35%, 52% 15%, 60% 30%, 68% 10%, 75% 25%, 82% 5%, 90% 20%, 95% 10%, 100% 15%, 100% 100%, 0% 100%);
-            z-index: 0; opacity: 0.8;
-        }
-        #loginScreen {
-            position: relative; z-index: 1;
-            display: flex; justify-content: center; align-items: center; min-height: 100vh;
-        }
-        .login-card {
-            background: rgba(255,255,255,0.08); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
-            padding: 40px; width: 100%; max-width: 380px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-        }
-        .login-card h2 { color: white; font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 6px; }
-        .login-card .subtitle { color: rgba(255,255,255,0.5); font-size: 13px; text-align: center; margin-bottom: 28px; }
-        input, select {
-            width: 100%; padding: 12px 16px;
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 10px; font-size: 14px; color: white; outline: none;
-            margin-bottom: 14px; transition: border 0.2s, background 0.2s;
-        }
-        input::placeholder { color: rgba(255,255,255,0.4); }
-        input:focus, select:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
-        select { cursor: pointer; appearance: none; }
-        select option { background: #1a1a2e; color: white; }
-        .btn-primary {
-            width: 100%; padding: 13px; background: #e91e8c; color: white;
-            border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
-            cursor: pointer; transition: background 0.2s, transform 0.1s;
-            box-shadow: 0 4px 15px rgba(233,30,140,0.4);
-        }
-        .btn-primary:hover { background: #c2185b; transform: scale(1.02); }
-        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .error-msg {
-            background: rgba(233,30,74,0.2); border: 1px solid rgba(233,30,74,0.4);
-            color: #ff6b8a; padding: 10px 14px; border-radius: 8px;
-            font-size: 13px; margin-bottom: 14px; display: none;
-        }
-        .back-link { text-align: center; margin-top: 18px; color: rgba(255,255,255,0.5); font-size: 13px; }
-        .back-link a { color: #e91e8c; text-decoration: none; font-weight: 600; }
-        #dashboard { display: none; position: relative; z-index: 1; min-height: 100vh; }
-        .topbar {
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 16px 28px; display: flex; align-items: center; justify-content: space-between;
-        }
-        .topbar h1 { color: white; font-size: 20px; font-weight: 700; }
-        .topbar span { color: rgba(255,255,255,0.5); font-size: 13px; }
-        .btn-logout {
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.7); border-radius: 8px; padding: 7px 14px;
-            cursor: pointer; font-size: 13px; transition: background 0.2s;
-        }
-        .btn-logout:hover { background: rgba(255,255,255,0.2); }
-        .dashboard-body { padding: 28px; max-width: 1100px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; background: #f5f7fa; color: #2c3e50; }
+
+        /* ── Admin Login ── */
+        #loginScreen { display: flex; min-height: 100vh; }
+        .login-left { flex:1; background:#1e2a35; display:flex; flex-direction:column; justify-content:center; padding:60px; position:relative; overflow:hidden; }
+        .login-left::after { content:''; position:absolute; bottom:-80px; right:-80px; width:280px; height:280px; background:rgba(33,150,166,0.08); border-radius:50%; }
+        .login-left::before { content:''; position:absolute; top:-60px; left:-60px; width:200px; height:200px; background:rgba(33,150,166,0.05); border-radius:50%; }
+        .brand { display:flex; align-items:center; gap:10px; margin-bottom:48px; position:relative; z-index:1; }
+        .brand-icon { width:38px; height:38px; background:#2196a6; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+        .brand-name { font-size:18px; font-weight:800; color:#fff; }
+        .login-left h2 { font-size:32px; font-weight:800; color:#fff; line-height:1.2; letter-spacing:-0.8px; margin-bottom:14px; position:relative; z-index:1; }
+        .login-left p { font-size:15px; color:#8fa3b1; line-height:1.65; max-width:340px; position:relative; z-index:1; }
+        .login-right { width:480px; background:#fff; display:flex; align-items:center; justify-content:center; padding:48px 40px; border-left:1px solid #e8ecef; }
+        .login-form { width:100%; max-width:360px; }
+        .login-form h3 { font-size:24px; font-weight:800; color:#1e2a35; margin-bottom:6px; }
+        .login-form .sub { font-size:14px; color:#7f8c8d; margin-bottom:28px; }
+        .field { margin-bottom:18px; }
+        .field label { display:block; font-size:12px; font-weight:700; color:#2c3e50; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:6px; }
+        .field input { width:100%; padding:11px 14px; background:#f5f7fa; border:1.5px solid #e8ecef; border-radius:7px; font-size:14px; color:#2c3e50; outline:none; transition:border-color 0.15s; font-family:inherit; }
+        .field input::placeholder { color:#aab4be; }
+        .field input:focus { border-color:#2196a6; background:#fff; box-shadow:0 0 0 3px rgba(33,150,166,0.08); }
+        .pw-wrap { position:relative; }
+        .pw-wrap input { padding-right:42px; }
+        .pw-toggle { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#aab4be; font-size:16px; padding:0; }
+        .pw-toggle:hover { color:#2196a6; }
+        .btn-primary { width:100%; padding:12px; background:#2196a6; color:#fff; border:none; border-radius:7px; font-size:14px; font-weight:700; cursor:pointer; transition:background 0.15s; box-shadow:0 4px 14px rgba(33,150,166,0.25); margin-top:4px; }
+        .btn-primary:hover { background:#1a7a8a; }
+        .btn-primary:disabled { opacity:0.55; cursor:not-allowed; }
+        .error-msg { background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:10px 14px; border-radius:7px; font-size:13px; margin-bottom:16px; display:none; }
+        .back-link { text-align:center; margin-top:18px; font-size:13px; }
+        .back-link a { color:#2196a6; text-decoration:none; }
+        .back-link a:hover { text-decoration:underline; }
+        @media(max-width:768px) { .login-left { display:none; } .login-right { width:100%; border:none; } }
+
+        /* ── Dashboard ── */
+        #dashboard { display: none; min-height: 100vh; background: #f5f7fa; }
+        .topbar { background:#fff; border-bottom:1px solid #e8ecef; padding:0 28px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:10; }
+        .topbar-left { display:flex; align-items:center; gap:12px; }
+        .topbar-logo { width:32px; height:32px; background:#2196a6; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+        .topbar h1 { font-size:17px; font-weight:800; color:#1e2a35; }
+        .topbar span { font-size:13px; color:#7f8c8d; }
+        .btn-logout { background:none; border:1px solid #e8ecef; color:#7f8c8d; border-radius:7px; padding:7px 14px; cursor:pointer; font-size:13px; transition:all 0.15s; }
+        .btn-logout:hover { background:#fef2f2; color:#dc2626; border-color:#fecaca; }
+        .dashboard-body { padding: 28px; max-width: 1200px; margin: 0 auto; }
 
         /* ── Tabs ── */
-        .tabs-bar {
-            display: flex; gap: 4px; margin-bottom: 24px;
-            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 5px;
-            width: fit-content;
-        }
-        .tab-btn {
-            padding: 9px 22px; border-radius: 9px; border: none; cursor: pointer;
-            font-size: 14px; font-weight: 600; transition: background 0.2s, color 0.2s;
-            background: transparent; color: rgba(255,255,255,0.5);
-        }
-        .tab-btn.active { background: #e91e8c; color: white; box-shadow: 0 2px 10px rgba(233,30,140,0.4); }
-        .tab-btn:not(.active):hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
+        .tabs-bar { display:flex; gap:2px; margin-bottom:24px; border-bottom:2px solid #e8ecef; }
+        .tab-btn { padding:10px 22px; border:none; background:transparent; font-size:14px; font-weight:600; color:#7f8c8d; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s; }
+        .tab-btn:hover { color:#1e2a35; }
+        .tab-btn.active { color:#2196a6; border-bottom:2px solid #2196a6; }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
         /* ── Tab panel header row ── */
-        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .section-title { color: white; font-size: 18px; font-weight: 700; }
-        .btn-add {
-            padding: 9px 18px; background: #e91e8c; color: white;
-            border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
-            cursor: pointer; transition: background 0.2s;
-            box-shadow: 0 2px 10px rgba(233,30,140,0.35);
-        }
-        .btn-add:hover { background: #c2185b; }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .section-title { font-size:18px; font-weight:700; color:#1e2a35; }
+        .btn-add { padding:9px 18px; background:#2196a6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:background 0.15s; box-shadow:0 3px 10px rgba(33,150,166,0.25); }
+        .btn-add:hover { background:#1a7a8a; }
 
-        .table-card {
-            background: rgba(255,255,255,0.06); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; overflow: hidden;
-        }
+        .table-card { background:#fff; border:1px solid #e8ecef; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; }
-        thead tr { background: rgba(0,0,0,0.2); }
-        th { padding: 14px 18px; text-align: left; color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        td { padding: 14px 18px; color: rgba(255,255,255,0.85); font-size: 14px; border-top: 1px solid rgba(255,255,255,0.07); vertical-align: middle; }
-        tr:hover td { background: rgba(255,255,255,0.04); }
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 2px 2px; }
-        .badge-active { background: rgba(0,229,160,0.15); color: #00e5a0; border: 1px solid rgba(0,229,160,0.3); }
-        .badge-project { background: rgba(100,149,237,0.15); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
-        .badge-member { background: rgba(100,149,237,0.15); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
-        .badge-viewer { background: rgba(255,200,0,0.15); color: #ffc800; border: 1px solid rgba(255,200,0,0.3); }
-        .empty-state { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); font-size: 14px; }
+        thead tr { background:#f8fafc; }
+        th { padding:13px 18px; text-align:left; color:#7f8c8d; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid #e8ecef; }
+        td { padding:14px 18px; color:#374151; font-size:14px; border-top:1px solid #f0f2f5; vertical-align:middle; }
+        tr:hover td { background:#f8fafc; }
+        .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; margin:2px; }
+        .badge-active { background:#dcfce7; color:#16a34a; border:1px solid #bbf7d0; }
+        .badge-project { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
+        .badge-member { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
+        .badge-viewer { background:#fef9c3; color:#a16207; border:1px solid #fde68a; }
+        .empty-state { text-align: center; padding: 40px; color:#9ca3af; font-size: 14px; }
 
         /* ── Modals ── */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-            z-index: 100; justify-content: center; align-items: center;
-        }
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px); z-index:100; justify-content:center; align-items:center; }
         .modal-overlay.active { display: flex; }
-        .modal {
-            background: rgba(20,12,45,0.97); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 20px; padding: 36px; width: 100%; max-width: 440px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-        }
-        .modal h3 { color: white; font-size: 20px; font-weight: 700; margin-bottom: 20px; }
-        .modal label { display: block; color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 6px; }
+        .modal { background:#fff; border:1px solid #e8ecef; border-radius:16px; padding:32px; width:100%; max-width:440px; box-shadow:0 20px 60px rgba(0,0,0,0.15); }
+        .modal h3 { color:#1e2a35; font-size:18px; font-weight:800; margin-bottom:20px; }
+        .modal label { display:block; color:#374151; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:6px; }
+        input, select { width:100%; padding:10px 14px; background:#f5f7fa; border:1.5px solid #e8ecef; border-radius:7px; font-size:14px; color:#2c3e50; outline:none; margin-bottom:14px; transition:border-color 0.15s; font-family:inherit; }
+        input::placeholder { color:#aab4be; }
+        input:focus, select:focus { border-color:#2196a6; background:#fff; box-shadow:0 0 0 3px rgba(33,150,166,0.08); }
+        select { cursor:pointer; appearance:none; }
+        select option { background:#fff; color:#2c3e50; }
         .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-cancel {
-            flex: 1; padding: 12px; background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7);
-            border-radius: 10px; font-size: 14px; cursor: pointer; transition: background 0.2s;
-        }
-        .btn-cancel:hover { background: rgba(255,255,255,0.15); }
-        .btn-submit {
-            flex: 1; padding: 12px; background: #e91e8c; color: white;
-            border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
-            cursor: pointer; transition: background 0.2s;
-        }
-        .btn-submit:hover { background: #c2185b; }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-action { padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; border: none; }
-        .btn-action:hover { opacity: 0.8; }
-        .btn-edit { background: rgba(100,149,237,0.2); color: #6495ed; border: 1px solid rgba(100,149,237,0.3) !important; }
-        .btn-delete { background: rgba(233,30,74,0.2); color: #ff6b8a; border: 1px solid rgba(233,30,74,0.3) !important; }
-        .btn-msg { background: rgba(233,30,140,0.2); color: #e91e8c; border: 1px solid rgba(233,30,140,0.3) !important; }
+        .btn-cancel { flex:1; padding:11px; background:#f5f7fa; border:1.5px solid #e8ecef; color:#374151; border-radius:8px; font-size:14px; cursor:pointer; transition:background 0.15s; font-weight:600; }
+        .btn-cancel:hover { background:#e8ecef; }
+        .btn-submit { flex:1; padding:11px; background:#2196a6; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; transition:background 0.15s; }
+        .btn-submit:hover { background:#1a7a8a; }
+        .btn-submit:disabled { opacity:0.55; cursor:not-allowed; }
+        .btn-action { padding:5px 12px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; transition:all 0.15s; border:1px solid transparent; }
+        .btn-action:hover { opacity: 0.85; }
+        .btn-edit { background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe !important; }
+        .btn-delete { background:#fee2e2; color:#dc2626; border-color:#fecaca !important; }
+        .btn-msg { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0 !important; }
 
-        /* ── Admin chat modal textarea ── */
-        .modal textarea {
-            width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
-            font-size: 14px; color: white; outline: none; font-family: inherit;
-            resize: none; min-height: 100px; margin-bottom: 14px;
-            transition: border 0.2s, background 0.2s;
-        }
-        .modal textarea::placeholder { color: rgba(255,255,255,0.4); }
-        .modal textarea:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
+        /* ── Modal textarea ── */
+        .modal textarea { width:100%; padding:10px 14px; background:#f5f7fa; border:1.5px solid #e8ecef; border-radius:7px; font-size:14px; color:#2c3e50; outline:none; font-family:inherit; resize:none; min-height:100px; margin-bottom:14px; transition:border-color 0.15s; }
+        .modal textarea::placeholder { color:#aab4be; }
+        .modal textarea:focus { border-color:#2196a6; background:#fff; box-shadow:0 0 0 3px rgba(33,150,166,0.08); }
 
-        /* ── Admin live chat panel ── */
-        .chat-modal { max-width: 520px; display: flex; flex-direction: column; height: 520px; padding: 24px; }
-        .chat-modal h3 { margin-bottom: 12px; flex-shrink: 0; }
-        .admin-chat-messages {
-            flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
-            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px; margin-bottom: 12px;
-        }
-        .admin-chat-messages::-webkit-scrollbar { width: 4px; }
-        .admin-chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-        .acm-bubble { padding: 8px 12px; border-radius: 10px; max-width: 80%; font-size: 13px; line-height: 1.5; word-break: break-word; }
-        .acm-bubble.from-admin { background: rgba(233,30,140,0.2); border: 1px solid rgba(233,30,140,0.25); align-self: flex-end; color: rgba(255,255,255,0.9); }
-        .acm-bubble.from-user { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); align-self: flex-start; color: rgba(255,255,255,0.85); }
-        .acm-meta { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 3px; text-align: right; }
-        .acm-meta.left { text-align: left; }
-        .admin-chat-input-row { display: flex; gap: 8px; flex-shrink: 0; }
-        .admin-chat-input-row input {
-            flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
-            font-size: 13px; color: white; outline: none; margin-bottom: 0;
-        }
-        .admin-chat-input-row input:focus { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.15); }
-        .admin-chat-input-row button {
-            padding: 10px 18px; background: #e91e8c; color: white; border: none;
-            border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer;
-        }
-        .admin-chat-input-row button:hover { background: #c2185b; }
-        .acm-date-sep { text-align: center; font-size: 10px; color: rgba(255,255,255,0.3); margin: 4px 0; }
+        /* ── Admin live chat modal ── */
+        .chat-modal { max-width:520px; display:flex; flex-direction:column; height:520px; padding:24px; }
+        .chat-modal h3 { margin-bottom:12px; flex-shrink:0; }
+        .admin-chat-messages { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; background:#f5f7fa; border-radius:10px; padding:12px; margin-bottom:12px; }
+        .admin-chat-messages::-webkit-scrollbar { width:4px; }
+        .admin-chat-messages::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:2px; }
+        .acm-bubble { padding:8px 12px; border-radius:10px; max-width:80%; font-size:13px; line-height:1.5; word-break:break-word; }
+        .acm-bubble.from-admin { background:#2196a6; color:#fff; align-self:flex-end; }
+        .acm-bubble.from-user { background:#fff; border:1px solid #e8ecef; align-self:flex-start; color:#374151; }
+        .acm-meta { font-size:10px; color:#9ca3af; margin-top:3px; text-align:right; }
+        .acm-meta.left { text-align:left; }
+        .admin-chat-input-row { display:flex; gap:8px; flex-shrink:0; }
+        .admin-chat-input-row input { flex:1; padding:10px 14px; background:#f5f7fa; border:1.5px solid #e8ecef; border-radius:20px; font-size:13px; color:#2c3e50; outline:none; margin-bottom:0; }
+        .admin-chat-input-row input:focus { border-color:#2196a6; background:#fff; }
+        .admin-chat-input-row button { padding:10px 18px; background:#2196a6; color:#fff; border:none; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; }
+        .admin-chat-input-row button:hover { background:#1a7a8a; }
+        .acm-date-sep { text-align:center; font-size:10px; color:#9ca3af; margin:4px 0; }
 
-        /* ── Multi-project checkboxes ── */
-        .project-checklist {
-            max-height: 180px; overflow-y: auto;
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 10px; padding: 8px; margin-bottom: 14px;
-        }
-        .project-checklist::-webkit-scrollbar { width: 4px; }
-        .project-checklist::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-        .check-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 10px; border-radius: 8px; cursor: pointer;
-            transition: background 0.15s;
-        }
-        .check-item:hover { background: rgba(255,255,255,0.07); }
-        .check-item input[type="checkbox"] {
-            width: 16px; height: 16px; margin: 0; padding: 0;
-            accent-color: #e91e8c; cursor: pointer;
-        }
-        .check-item span { color: rgba(255,255,255,0.85); font-size: 14px; }
+        /* ── Project checklist ── */
+        .project-checklist { max-height:180px; overflow-y:auto; background:#f5f7fa; border:1.5px solid #e8ecef; border-radius:8px; padding:8px; margin-bottom:14px; }
+        .project-checklist::-webkit-scrollbar { width:4px; }
+        .project-checklist::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:2px; }
+        .check-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px; cursor:pointer; transition:background 0.15s; }
+        .check-item:hover { background:#e8ecef; }
+        .check-item input[type="checkbox"] { width:16px; height:16px; margin:0; padding:0; accent-color:#2196a6; cursor:pointer; }
+        .check-item span { color:#374151; font-size:14px; }
 
-        .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
-            background: rgba(0,229,160,0.15); border: 1px solid rgba(0,229,160,0.4);
-            color: #00e5a0; padding: 12px 24px; border-radius: 12px;
-            font-size: 14px; font-weight: 600; backdrop-filter: blur(10px);
-            opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 9999;
-            pointer-events: none;
-        }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:#1e2a35; color:#fff; padding:12px 24px; border-radius:10px; font-size:14px; font-weight:600; opacity:0; transition:opacity 0.3s, transform 0.3s; z-index:9999; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,0.15); }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 
+<!-- Admin Login -->
 <div id="loginScreen">
-    <div class="login-card">
-        <h2>🛡️ Admin Login</h2>
-        <p class="subtitle">Sign in with your admin account</p>
-        <div class="error-msg" id="errorMsg"></div>
-        <input type="email" id="adminEmail" placeholder="Admin email" />
-        <div style="position:relative;margin-bottom:14px;">
-            <input type="password" id="adminPassword" placeholder="Password" style="margin-bottom:0;padding-right:42px;" />
-            <button type="button" onclick="toggleAdminPw(this)" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:16px;padding:0;line-height:1;">👁</button>
+    <div class="login-left">
+        <div class="brand"><div class="brand-icon">🛡️</div><span class="brand-name">TeamChat Admin</span></div>
+        <h2>Admin Control Panel</h2>
+        <p>Manage projects, users, and team communications from one place.</p>
+    </div>
+    <div class="login-right">
+        <div class="login-form">
+            <h3>Admin Sign in</h3>
+            <p class="sub">Sign in with your admin account</p>
+            <div class="error-msg" id="errorMsg"></div>
+            <div class="field">
+                <label>Email address</label>
+                <input type="email" id="adminEmail" placeholder="admin@company.com" />
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <div class="pw-wrap">
+                    <input type="password" id="adminPassword" placeholder="••••••••" style="margin-bottom:0;" />
+                    <button type="button" class="pw-toggle" onclick="toggleAdminPw(this)" tabindex="-1">👁</button>
+                </div>
+            </div>
+            <button class="btn-primary" id="loginBtn" onclick="adminLogin()">Sign in →</button>
+            <div class="back-link"><a href="/home.html">← Back to home</a></div>
         </div>
-        <button class="btn-primary" id="loginBtn" onclick="adminLogin()">Login</button>
-        <div class="back-link"><a href="/home.html">← Back to home</a></div>
     </div>
 </div>
 
 <div id="dashboard">
     <div class="topbar">
-        <div>
-            <h1>🛡️ Admin Panel</h1>
-            <span id="adminName"></span>
+        <div class="topbar-left">
+            <div class="topbar-logo">🛡️</div>
+            <h1>Admin Panel</h1>
         </div>
-        <button class="btn-logout" onclick="logout()">Logout</button>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span id="adminName"></span>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
     </div>
     <div class="dashboard-body">
-
         <!-- Browser-style tabs -->
         <div class="tabs-bar">
             <button class="tab-btn active" onclick="switchTab('projects')">📁 Projects</button>
@@ -272,7 +207,7 @@
                 <div class="section-title">Users</div>
                 <div style="display:flex;gap:10px;align-items:center;">
                     <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none;" />
-                    <button class="btn-add" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);" onclick="openExcelModal()">📤 Upload Excel</button>
+                    <button class="btn-add" style="background:#f5f7fa;border:1.5px solid #e8ecef;color:#374151;" onclick="openExcelModal()">📤 Upload Excel</button>
                     <button class="btn-add" onclick="openModal('userModal')">+ New User</button>
                 </div>
             </div>
@@ -384,13 +319,13 @@
     <div class="modal" style="max-width:700px;max-height:80vh;display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
             <h3 style="margin-bottom:0;">📤 Bulk Upload Users</h3>
-            <button onclick="closeModal('excelModal')" style="background:transparent;border:none;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;" title="Close">✕</button>
+            <button onclick="closeModal('excelModal')" style="background:transparent;border:none;color:#9ca3af;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;" title="Close">✕</button>
         </div>
-        <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;margin-top:-10px;">Review users before creating. Download the template to get started.</p>
+        <p style="font-size:13px;color:#7f8c8d;margin-bottom:16px;margin-top:-10px;">Review users before creating. Download the template to get started.</p>
         <div style="display:flex;gap:10px;margin-bottom:14px;flex-shrink:0;">
             <button class="btn-submit" style="flex:none;padding:8px 16px;font-size:13px;" onclick="downloadTemplate()">⬇ Download Template</button>
             <button class="btn-cancel" style="flex:none;padding:8px 16px;font-size:13px;" onclick="document.getElementById('excelFileInput').click()">📂 Choose File</button>
-            <span style="font-size:13px;color:rgba(255,255,255,0.4);align-self:center;" id="excelFileName"></span>
+            <span style="font-size:13px;color:#7f8c8d;align-self:center;" id="excelFileName"></span>
         </div>
         <div style="flex:1;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:10px;margin-bottom:16px;">
             <table style="width:100%;border-collapse:collapse;" id="excelPreviewTable">
@@ -405,7 +340,7 @@
                     </tr>
                 </thead>
                 <tbody id="excelPreviewBody">
-                    <tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px;">Upload an Excel file to preview users</td></tr>
+                    <tr><td colspan="6" style="text-align:center;padding:30px;color:#9ca3af;font-size:13px;">Upload an Excel file to preview users</td></tr>
                 </tbody>
             </table>
         </div>
@@ -413,7 +348,7 @@
             <div style="background:rgba(255,255,255,0.1);border-radius:20px;height:6px;overflow:hidden;">
                 <div id="excelProgressBar" style="height:100%;background:#e91e8c;border-radius:20px;width:0%;transition:width 0.3s;"></div>
             </div>
-            <p id="excelProgressText" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:6px;text-align:center;"></p>
+            <p id="excelProgressText" style="font-size:12px;color:#374151;margin-top:6px;text-align:center;"></p>
         </div>
         <div class="modal-actions" style="flex-shrink:0;">
             <button class="btn-cancel" onclick="closeModal('excelModal')">Cancel</button>
@@ -779,16 +714,16 @@
     function renderExcelPreview() {
         const tbody = document.getElementById("excelPreviewBody");
         if (!excelUsers.length) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px;">No valid rows found. Check your Excel format.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#9ca3af;font-size:13px;">No valid rows found. Check your Excel format.</td></tr>`;
             return;
         }
-        tbody.innerHTML = excelUsers.map((u, i) => `<tr id="excel-row-${i}" style="border-top:1px solid rgba(255,255,255,0.07);">
-            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.85);">${u.name}</td>
-            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.65);">${u.email}</td>
-            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.4);">••••••</td>
-            <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.65);">${u.projectNames || "—"}</td>
-            <td style="padding:10px 12px;"><span style="background:rgba(100,149,237,0.15);color:#6495ed;border:1px solid rgba(100,149,237,0.3);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;">${u.role.charAt(0).toUpperCase()+u.role.slice(1)}</span></td>
-            <td style="padding:10px 12px;font-size:12px;color:rgba(255,255,255,0.3);" id="excel-status-${i}">Pending</td>
+        tbody.innerHTML = excelUsers.map((u, i) => `<tr id="excel-row-${i}">
+            <td style="padding:10px 12px;font-size:13px;color:#1e2a35;font-weight:600;">${u.name}</td>
+            <td style="padding:10px 12px;font-size:13px;color:#374151;">${u.email}</td>
+            <td style="padding:10px 12px;font-size:13px;color:#9ca3af;">••••••</td>
+            <td style="padding:10px 12px;font-size:13px;color:#374151;">${u.projectNames || "—"}</td>
+            <td style="padding:10px 12px;"><span style="background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700;">${u.role.charAt(0).toUpperCase()+u.role.slice(1)}</span></td>
+            <td style="padding:10px 12px;font-size:12px;color:#9ca3af;" id="excel-status-${i}">Pending</td>
         </tr>`).join("");
     }
 
@@ -836,7 +771,9 @@
 
         document.getElementById("excelProgressBar").style.width = "100%";
         document.getElementById("excelProgressText").textContent = `Done — ${success} created, ${failed} failed`;
-        btn.textContent = "Done";
+        btn.textContent = "Close";
+        btn.disabled = false;
+        btn.onclick = function() { closeModal("excelModal"); };
         await loadUsers();
         showToast(`✅ Bulk upload: ${success} users created`);
     }

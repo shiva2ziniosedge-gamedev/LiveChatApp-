@@ -98,8 +98,9 @@ function compressImage(file, callback) {
 // ── Render helpers ──
 function renderMessage(user, message, timestamp) {
     const list = document.getElementById("messagesList");
+    const isOwn = user === currentUser;
     const div = document.createElement("div");
-    div.className = "message";
+    div.className = "message" + (isOwn ? " own" : "");
     div.innerHTML = `
         <div class="message-content">
             <div class="message-user">${user}</div>
@@ -197,6 +198,10 @@ connection.on("ReceiveMessage", function(user, message, timestamp) {
     maybeInsertDateSeparator(new Date(), list);
     renderMessage(user, message, timestamp);
     list.scrollTop = list.scrollHeight;
+    // Notify if message is from someone else and tab not focused
+    if (user !== currentUser && window.notifyUnread) {
+        window.notifyUnread(user, message);
+    }
 });
 
 connection.on("UserIsTyping", function(user) {
@@ -292,9 +297,12 @@ document.getElementById("imageInput").addEventListener("change", function(e) {
     e.target.value = "";
 });
 
-// ── Voice Calls ──
+// ── Voice / Video Calls ──
 let localStream = null;
 let peerConnection = null;
+// Expose on window so index.html video functions can access
+Object.defineProperty(window, 'localStream', { get: () => localStream, set: v => { localStream = v; } });
+Object.defineProperty(window, 'peerConnection', { get: () => peerConnection, set: v => { peerConnection = v; } });
 let callTarget = null;
 
 const iceServers = {
@@ -323,6 +331,10 @@ function createPeerConnection(target) {
     peerConnection.ontrack = function(event) {
         const audio = document.getElementById("remoteAudio");
         audio.srcObject = event.streams[0];
+        // Also render in video element if video call
+        const remoteVideo = document.getElementById("remoteVideo");
+        if (remoteVideo) remoteVideo.srcObject = event.streams[0];
+    };
         audio.play();
     };
     if (localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));

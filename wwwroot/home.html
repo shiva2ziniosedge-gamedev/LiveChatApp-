@@ -3,108 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Chat - Welcome</title>
+    <title>TeamChat</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #4a3f6b 60%, #7b6fa0 80%, #a89bc2 100%);
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            height: 45%;
-            background: linear-gradient(180deg, transparent 0%, #2d1b4e 100%);
-            clip-path: polygon(0% 60%, 8% 40%, 15% 50%, 22% 30%, 30% 45%, 38% 20%, 45% 35%, 52% 15%, 60% 30%, 68% 10%, 75% 25%, 82% 5%, 90% 20%, 95% 10%, 100% 15%, 100% 100%, 0% 100%);
-            z-index: 0; opacity: 0.8;
-        }
-
-        .card {
-            position: relative;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
-            padding: 50px 40px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-
-        .logo { font-size: 48px; margin-bottom: 16px; }
-
-        h1 {
-            color: white;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: rgba(255,255,255,0.5);
-            font-size: 14px;
-            margin-bottom: 40px;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
-        .btn:hover { transform: scale(1.02); }
-        .btn:active { transform: scale(0.98); }
-
-        .btn-user {
-            background: #e91e8c;
-            color: white;
-            box-shadow: 0 4px 20px rgba(233,30,140,0.4);
-        }
-
-        .btn-user:hover { background: #c2185b; box-shadow: 0 6px 25px rgba(233,30,140,0.5); }
-
-        .btn-admin {
-            background: rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.85);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .btn-admin:hover { background: rgba(255,255,255,0.18); }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;background:#f5f7fa;color:#2c3e50;}
+        .left{flex:1;background:#1e2a35;display:flex;flex-direction:column;justify-content:center;padding:60px;position:relative;overflow:hidden;}
+        .left::after{content:'';position:absolute;bottom:-80px;right:-80px;width:280px;height:280px;background:rgba(33,150,166,0.08);border-radius:50%;}
+        .left::before{content:'';position:absolute;top:-60px;left:-60px;width:200px;height:200px;background:rgba(33,150,166,0.05);border-radius:50%;}
+        .brand{display:flex;align-items:center;gap:10px;margin-bottom:48px;position:relative;z-index:1;}
+        .brand-icon{width:38px;height:38px;background:#2196a6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+        .brand-name{font-size:18px;font-weight:800;color:#fff;}
+        .left h2{font-size:34px;font-weight:800;color:#fff;line-height:1.2;letter-spacing:-0.8px;margin-bottom:14px;position:relative;z-index:1;}
+        .left p{font-size:15px;color:#8fa3b1;line-height:1.65;max-width:340px;margin-bottom:40px;position:relative;z-index:1;}
+        .feat-list{display:flex;flex-direction:column;gap:14px;position:relative;z-index:1;}
+        .feat-item{display:flex;align-items:center;gap:12px;color:#8fa3b1;font-size:14px;}
+        .feat-dot{width:8px;height:8px;border-radius:50%;background:#2196a6;flex-shrink:0;}
+        .right{width:480px;background:#fff;display:flex;align-items:center;justify-content:center;padding:48px 40px;border-left:1px solid #e8ecef;}
+        .form{width:100%;max-width:360px;}
+        .form h3{font-size:24px;font-weight:800;color:#1e2a35;margin-bottom:6px;letter-spacing:-0.4px;}
+        .form .sub{font-size:14px;color:#7f8c8d;margin-bottom:32px;}
+        .btn{width:100%;padding:13px;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;}
+        .btn-user{background:#2196a6;color:#fff;box-shadow:0 4px 14px rgba(33,150,166,0.3);}
+        .btn-user:hover{background:#1a7a8a;box-shadow:0 6px 20px rgba(33,150,166,0.4);}
+        .btn-admin{background:#f5f7fa;color:#2c3e50;border:1.5px solid #e8ecef;}
+        .btn-admin:hover{background:#e8ecef;}
+        @media(max-width:768px){.left{display:none;}.right{width:100%;border:none;}}
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="logo">💬</div>
-        <h1>Live Chat</h1>
-        <p class="subtitle" style="display:none;"></p>
-
-        <a class="btn btn-user" href="/login.html">
-            👤 User Login
-        </a>
-        <a class="btn btn-admin" href="/admin.html">
-            🛡️ Admin Login
-        </a>
+    <div class="left">
+        <div class="brand"><div class="brand-icon">💬</div><span class="brand-name">TeamChat</span></div>
+        <h2>Your team's communication hub</h2>
+        <p>Real-time messaging, daily standups, blocker tracking — all in one place.</p>
+        <div class="feat-list">
+            <div class="feat-item"><div class="feat-dot"></div>Real-time team messaging</div>
+            <div class="feat-item"><div class="feat-dot"></div>Daily status updates</div>
+            <div class="feat-item"><div class="feat-dot"></div>Blocker &amp; dependency tracking</div>
+            <div class="feat-item"><div class="feat-dot"></div>Voice calls &amp; image sharing</div>
+        </div>
+    </div>
+    <div class="right">
+        <div class="form">
+            <h3>Get started</h3>
+            <p class="sub">Choose how you'd like to sign in</p>
+            <a class="btn btn-user" href="/login.html">👤 User Login</a>
+            <a class="btn btn-admin" href="/admin.html">🛡️ Admin Login</a>
+        </div>
     </div>
 </body>
 </html>
