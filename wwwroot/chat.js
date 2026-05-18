@@ -98,34 +98,26 @@ function compressImage(file, callback) {
 // ── Render helpers ──
 function renderMessage(user, message, timestamp) {
     const list = document.getElementById("messagesList");
-    const initial = user ? user.charAt(0).toUpperCase() : "?";
     const div = document.createElement("div");
     div.className = "message";
     div.innerHTML = `
-        <div class="msg-avatar">${initial}</div>
-        <div class="msg-body">
-            <div class="msg-meta">
-                <span class="msg-user">${user}</span>
-                <span class="msg-time">${timestamp}</span>
-            </div>
-            <div class="msg-text">${message}</div>
+        <div class="message-content">
+            <div class="message-user">${user}</div>
+            <div class="message-text">${message}</div>
+            <div class="message-time">${timestamp}</div>
         </div>`;
     list.appendChild(div);
 }
 
 function renderImage(user, imageData, fileName, timestamp) {
     const list = document.getElementById("messagesList");
-    const initial = user ? user.charAt(0).toUpperCase() : "?";
     const div = document.createElement("div");
     div.className = "message";
     div.innerHTML = `
-        <div class="msg-avatar">${initial}</div>
-        <div class="msg-body">
-            <div class="msg-meta">
-                <span class="msg-user">${user}</span>
-                <span class="msg-time">${timestamp}</span>
-            </div>
-            <div class="msg-text"><img src="${imageData}" alt="${fileName}" /></div>
+        <div class="message-content">
+            <div class="message-user">${user}</div>
+            <img src="${imageData}" alt="${fileName}" style="max-width:300px;border-radius:8px;margin:5px 0;" />
+            <div class="message-time">${timestamp}</div>
         </div>`;
     list.appendChild(div);
 }
@@ -142,20 +134,16 @@ function updateUsersList(users) {
         const userDiv = document.createElement("div");
         userDiv.className = "user-item";
         userDiv.innerHTML = `
-            <span class="user-dot"></span>
             <span class="user-name">${user}</span>
-            ${user !== currentUser ? `<button class="btn-call" onclick="initiateCall('${user}',false)" title="Voice call">📞</button><button class="btn-vcall" onclick="initiateCall('${user}',true)" title="Video call">📹</button>` : ''}
+            ${user !== currentUser ? `<button class="btn-call" onclick="initiateCall('${user}')">📞</button>` : ''}
         `;
         usersList.appendChild(userDiv);
         if (mobileUsersList && user !== currentUser) {
             const mobileDiv = document.createElement("div");
-            mobileDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f5f7fa;border:1px solid #e8ecef;border-radius:8px;margin-bottom:8px;color:#2c3e50;font-size:14px;";
+            mobileDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.08);border-radius:10px;margin-bottom:8px;color:rgba(255,255,255,0.9);font-size:15px;";
             mobileDiv.innerHTML = `
-                <span style="font-weight:500;">${user}</span>
-                <div style="display:flex;gap:6px;">
-                    <button onclick="initiateCall('${user}',false);document.getElementById('mobileUsersOverlay').style.display='none';" style="background:#e0f7fa;border:1px solid #b2ebf2;color:#00838f;border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:600;">📞</button>
-                    <button onclick="initiateCall('${user}',true);document.getElementById('mobileUsersOverlay').style.display='none';" style="background:#e8f5e9;border:1px solid #c8e6c9;color:#2e7d32;border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:600;">📹</button>
-                </div>
+                <span>${user}</span>
+                <button onclick="initiateCall('${user}');document.getElementById('mobileUsersOverlay').style.display='none';" style="background:rgba(0,229,160,0.2);border:1px solid rgba(0,229,160,0.3);color:#00e5a0;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:14px;">📞 Call</button>
             `;
             mobileUsersList.appendChild(mobileDiv);
         }
@@ -178,7 +166,7 @@ function applyRoleRestrictions(role) {
         textareas.forEach(t => { t.disabled = true; t.placeholder = "Viewers can read but cannot post"; });
         // Show viewer badge
         const badge = document.createElement("span");
-        badge.style.cssText = "font-size:11px;font-weight:700;background:#fff8e1;color:#f57f17;border:1px solid #ffe082;border-radius:4px;padding:2px 8px;margin-left:8px;";
+        badge.style.cssText = "background:rgba(255,200,0,0.15);color:#ffc800;border:1px solid rgba(255,200,0,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;margin-left:8px;";
         badge.textContent = "Viewer";
         document.getElementById("projectTitle").appendChild(badge);
     }
@@ -304,15 +292,10 @@ document.getElementById("imageInput").addEventListener("change", function(e) {
     e.target.value = "";
 });
 
-// ── Voice / Video / Screen Share ──
+// ── Voice Calls ──
 let localStream = null;
-let screenStream = null;
 let peerConnection = null;
 let callTarget = null;
-let isVideoCall = false;
-let isMuted = false;
-let isCamOff = false;
-let isSharingScreen = false;
 
 const iceServers = {
     iceServers: [
@@ -321,33 +304,15 @@ const iceServers = {
     ]
 };
 
-function showCallOverlay(status, name, showAccept, isVideo) {
+function showCallOverlay(status, name, showAccept) {
     document.getElementById("callStatus").textContent = status;
     document.getElementById("callName").textContent = name;
-    document.getElementById("callTypeBadge").textContent = isVideo ? "📹 Video Call" : "📞 Voice Call";
     document.getElementById("callOverlay").classList.add("active");
-    document.getElementById("callActionsIncoming").style.display = showAccept ? "flex" : "none";
-    document.getElementById("callActionsActive").style.display = showAccept ? "none" : "flex";
-    const videoArea = document.getElementById("callVideoArea");
-    if (isVideo) { videoArea.classList.add("active"); document.getElementById("callAvatar").style.display = "none"; }
-    else { videoArea.classList.remove("active"); document.getElementById("callAvatar").style.display = "flex"; }
-    document.getElementById("camBtnWrap").style.display = isVideo ? "flex" : "none";
-    document.getElementById("screenBtnWrap").style.display = "flex";
+    document.getElementById("acceptCallBtn").style.display = showAccept ? "block" : "none";
 }
 
 function hideCallOverlay() {
     document.getElementById("callOverlay").classList.remove("active");
-    document.getElementById("callVideoArea").classList.remove("active");
-    document.getElementById("callActionsIncoming").style.display = "flex";
-    document.getElementById("callActionsActive").style.display = "none";
-    document.getElementById("callAvatar").style.display = "flex";
-    isMuted = false; isCamOff = false; isSharingScreen = false;
-    document.getElementById("btnMute").classList.remove("active");
-    document.getElementById("btnCam").classList.remove("active");
-    document.getElementById("btnScreen").classList.remove("active");
-    document.getElementById("muteLabel").textContent = "Mute";
-    document.getElementById("camLabel").textContent = "Camera";
-    document.getElementById("screenLabel").textContent = "Share";
 }
 
 function createPeerConnection(target) {
@@ -356,170 +321,60 @@ function createPeerConnection(target) {
         if (event.candidate) connection.invoke("SendIceCandidate", target, JSON.stringify(event.candidate));
     };
     peerConnection.ontrack = function(event) {
-        if (isVideoCall) {
-            const remoteVideo = document.getElementById("remoteVideo");
-            remoteVideo.srcObject = event.streams[0];
-            remoteVideo.play().catch(e => console.warn("remoteVideo play:", e));
-        } else {
-            const audio = document.getElementById("remoteAudio");
-            audio.srcObject = event.streams[0];
-            audio.play().catch(e => console.warn("remoteAudio play:", e));
-        }
+        const audio = document.getElementById("remoteAudio");
+        audio.srcObject = event.streams[0];
+        audio.play();
     };
     if (localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 }
 
-async function initiateCall(target, withVideo) {
-    if (!currentUser || target === currentUser) return;
-    isVideoCall = !!withVideo;
+async function initiateCall(target) {
+    if (!currentUser) return;
+    if (target === currentUser) return;
     callTarget = target;
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoCall });
-        if (isVideoCall) document.getElementById("localVideo").srcObject = localStream;
-        createPeerConnection(target);
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        connection.invoke("SendOffer", target, JSON.stringify(offer));
-        if (isVideoCall) { connection.invoke("VideoCallUser", currentUser, target); }
-        else { connection.invoke("CallUser", currentUser, target); }
-        showCallOverlay("Calling...", target, false, isVideoCall);
-    } catch(err) {
-        alert("Could not access " + (isVideoCall ? "camera/microphone" : "microphone") + ". Check permissions.");
-        console.error(err);
-    }
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    createPeerConnection(target);
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    connection.invoke("SendOffer", target, JSON.stringify(offer));
+    connection.invoke("CallUser", currentUser, target);
+    showCallOverlay("Calling...", target, false);
 }
 
-function toggleMute() {
-    if (!localStream) return;
-    isMuted = !isMuted;
-    localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
-    const btn = document.getElementById("btnMute");
-    btn.classList.toggle("active", isMuted);
-    btn.textContent = isMuted ? "🔇" : "🎤";
-    document.getElementById("muteLabel").textContent = isMuted ? "Unmute" : "Mute";
-}
-
-function toggleCamera() {
-    if (!localStream || !isVideoCall) return;
-    isCamOff = !isCamOff;
-    localStream.getVideoTracks().forEach(t => t.enabled = !isCamOff);
-    const btn = document.getElementById("btnCam");
-    btn.classList.toggle("active", isCamOff);
-    btn.textContent = isCamOff ? "🚫" : "📹";
-    document.getElementById("camLabel").textContent = isCamOff ? "Start Cam" : "Camera";
-}
-
-async function toggleScreenShare() {
-    if (!peerConnection) return;
-    if (!isSharingScreen) {
-        try {
-            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-            const screenTrack = screenStream.getVideoTracks()[0];
-            const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === "video");
-            if (sender) { sender.replaceTrack(screenTrack); }
-            else { peerConnection.addTrack(screenTrack, screenStream); }
-            if (isVideoCall) document.getElementById("localVideo").srcObject = screenStream;
-            screenTrack.onended = () => { stopScreenShare(); };
-            isSharingScreen = true;
-            document.getElementById("btnScreen").classList.add("active");
-            document.getElementById("btnScreen").textContent = "⏹️";
-            document.getElementById("screenLabel").textContent = "Stop";
-        } catch(err) { console.error("Screen share failed:", err); }
-    } else { stopScreenShare(); }
-}
-
-function stopScreenShare() {
-    if (!screenStream) return;
-    screenStream.getTracks().forEach(t => t.stop());
-    screenStream = null;
-    if (isVideoCall && localStream) {
-        const camTrack = localStream.getVideoTracks()[0];
-        const sender = peerConnection && peerConnection.getSenders().find(s => s.track && s.track.kind === "video");
-        if (sender && camTrack) sender.replaceTrack(camTrack);
-        document.getElementById("localVideo").srcObject = localStream;
-    }
-    isSharingScreen = false;
-    document.getElementById("btnScreen").classList.remove("active");
-    document.getElementById("btnScreen").textContent = "🖥️";
-    document.getElementById("screenLabel").textContent = "Share";
-}
-
-function endActiveCall() {
-    connection.invoke("EndCall", callTarget);
-    cleanupCall();
-}
-
-function cleanupCall() {
-    hideCallOverlay();
-    stopScreenShare();
-    if (peerConnection) { peerConnection.close(); peerConnection = null; }
-    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-    const rv = document.getElementById("remoteVideo");
-    const lv = document.getElementById("localVideo");
-    if (rv) rv.srcObject = null;
-    if (lv) lv.srcObject = null;
-    callTarget = null; isVideoCall = false;
-}
-
-connection.on("IncomingCall", function(caller) { callTarget = caller; isVideoCall = false; showCallOverlay("Incoming Voice Call", caller, true, false); });
-connection.on("IncomingVideoCall", function(caller) { callTarget = caller; isVideoCall = true; showCallOverlay("Incoming Video Call", caller, true, true); });
-connection.on("CallAccepted", function() {
-    document.getElementById("callStatus").textContent = "Connected";
-    document.getElementById("callActionsIncoming").style.display = "none";
-    document.getElementById("callActionsActive").style.display = "flex";
-});
-connection.on("CallRejected", function() { cleanupCall(); alert("Call was declined."); });
-connection.on("CallEnded", function() { cleanupCall(); });
+connection.on("IncomingCall", function(caller) { callTarget = caller; showCallOverlay("Incoming Call", caller, true); });
+connection.on("CallAccepted", function() { document.getElementById("callStatus").textContent = "Connected"; document.getElementById("acceptCallBtn").style.display = "none"; });
+connection.on("CallRejected", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } alert("Call was rejected."); });
+connection.on("CallEnded", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } });
 
 connection.on("ReceiveOffer", async function(offerJson) {
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoCall });
-        if (isVideoCall) {
-            document.getElementById("localVideo").srcObject = localStream;
-            document.getElementById("callVideoArea").classList.add("active");
-            document.getElementById("callAvatar").style.display = "none";
-        }
-        createPeerConnection(callTarget);
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerJson)));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        connection.invoke("SendAnswer", callTarget, JSON.stringify(answer));
-        document.getElementById("callStatus").textContent = "Connected";
-        document.getElementById("callActionsIncoming").style.display = "none";
-        document.getElementById("callActionsActive").style.display = "flex";
-        document.getElementById("camBtnWrap").style.display = isVideoCall ? "flex" : "none";
-    } catch(err) { console.error("ReceiveOffer error:", err); cleanupCall(); }
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    createPeerConnection(callTarget);
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerJson)));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    connection.invoke("SendAnswer", callTarget, JSON.stringify(answer));
 });
 
 connection.on("ReceiveAnswer", async function(answerJson) {
-    if (peerConnection) await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answerJson)));
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answerJson)));
 });
 
 connection.on("ReceiveIceCandidate", async function(candidateJson) {
     if (peerConnection) await peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidateJson)));
 });
 
-document.getElementById("acceptCallBtn").addEventListener("click", async function() {
+document.getElementById("acceptCallBtn").addEventListener("click", function() {
     connection.invoke("AcceptCall", callTarget);
-    try {
-        if (!localStream) {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoCall });
-            if (isVideoCall) {
-                document.getElementById("localVideo").srcObject = localStream;
-                document.getElementById("callVideoArea").classList.add("active");
-                document.getElementById("callAvatar").style.display = "none";
-            }
-        }
-    } catch(err) { console.error("Accept call media error:", err); }
-    document.getElementById("callStatus").textContent = "Connecting...";
-    document.getElementById("callActionsIncoming").style.display = "none";
-    document.getElementById("callActionsActive").style.display = "flex";
-    document.getElementById("camBtnWrap").style.display = isVideoCall ? "flex" : "none";
+    document.getElementById("callStatus").textContent = "Connected";
+    document.getElementById("acceptCallBtn").style.display = "none";
 });
 
 document.getElementById("rejectCallBtn").addEventListener("click", function() {
-    connection.invoke("RejectCall", callTarget);
-    cleanupCall();
+    connection.invoke("EndCall", callTarget);
+    hideCallOverlay();
+    if (peerConnection) { peerConnection.close(); peerConnection = null; }
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    callTarget = null;
 });
 
 document.getElementById("mobileCallBtn").addEventListener("click", function() {
