@@ -173,7 +173,26 @@
         }
         #typingIndicator { padding: 4px 20px; font-size: 12px; color: #9ca3af; font-style: italic; min-height: 20px; }
 
-        /* ── Date separator ── */
+        /* ── Date jump picker ── */
+        .date-jump-overlay {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff; border: 1px solid #e8ecef; border-radius: 16px;
+            padding: 20px 28px; z-index: 500; text-align: center;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.15); min-width: 240px;
+        }
+        .date-jump-overlay.active { display: block; }
+        .date-jump-overlay h4 { font-size: 12px; font-weight: 700; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .date-jump-display { font-size: 22px; font-weight: 800; color: #1e2a35; margin-bottom: 8px; }
+        .date-jump-hint { font-size: 11px; color: #9ca3af; margin-bottom: 14px; }
+        .date-jump-input { padding: 8px 12px; border: 1.5px solid #e8ecef; border-radius: 8px; font-size: 14px; color: #1e2a35; outline: none; width: 100%; font-family: inherit; }
+        .date-jump-input:focus { border-color: #2196a6; box-shadow: 0 0 0 3px rgba(33,150,166,0.08); }
+        .date-jump-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .date-jump-go { flex: 1; padding: 9px; background: #2196a6; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .date-jump-go:hover { background: #1a7a8a; }
+        .date-jump-cancel { flex: 1; padding: 9px; background: #f5f7fa; border: 1.5px solid #e8ecef; color: #374151; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .date-jump-cancel:hover { background: #e8ecef; }
+        .date-jump-scroll-hint { font-size: 11px; color: #2196a6; margin-top: 8px; }
         .date-separator { text-align: center; margin: 16px 0; display: flex; align-items: center; gap: 10px; }
         .date-separator::before, .date-separator::after { content: ''; flex: 1; height: 1px; background: #e8ecef; }
         .date-separator span { color: #9ca3af; font-size: 11px; font-weight: 600; white-space: nowrap; background: #f0f2f5; padding: 3px 12px; border-radius: 20px; }
@@ -723,6 +742,19 @@
         };
 
     </script>
+    <!-- Date Jump Picker -->
+    <div class="date-jump-overlay" id="dateJumpOverlay">
+        <h4>📅 Jump to Date</h4>
+        <div class="date-jump-display" id="dateJumpDisplay">—</div>
+        <div class="date-jump-hint">Scroll wheel to change date</div>
+        <input type="date" class="date-jump-input" id="dateJumpInput" />
+        <div class="date-jump-actions">
+            <button class="date-jump-go" onclick="jumpToSelectedDate()">Go</button>
+            <button class="date-jump-cancel" onclick="closeDateJump()">Cancel</button>
+        </div>
+        <div class="date-jump-scroll-hint">↑↓ scroll to navigate dates</div>
+    </div>
+
     <script src="chat.js"></script>
 </body>
 </html>

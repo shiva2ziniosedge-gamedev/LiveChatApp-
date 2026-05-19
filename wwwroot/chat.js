@@ -390,3 +390,117 @@ document.getElementById("rejectCallBtn").addEventListener("click", function() {
 document.getElementById("mobileCallBtn").addEventListener("click", function() {
     document.getElementById("mobileUsersOverlay").style.display = "flex";
 });
+
+// ── Date Jump Picker (middle-click on chat) ──
+let dateJumpActive = false;
+let dateJumpDate = new Date();
+
+function openDateJump() {
+    dateJumpActive = true;
+    dateJumpDate = new Date();
+    updateDateJumpDisplay();
+    const overlay = document.getElementById("dateJumpOverlay");
+    overlay.classList.add("active");
+    // Set input to today
+    document.getElementById("dateJumpInput").value = toInputDate(dateJumpDate);
+}
+
+function closeDateJump() {
+    dateJumpActive = false;
+    document.getElementById("dateJumpOverlay").classList.remove("active");
+}
+
+function toInputDate(date) {
+    return date.toISOString().split("T")[0];
+}
+
+function updateDateJumpDisplay() {
+    const d = dateJumpDate;
+    const today = new Date();
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    let label;
+    if (d.toDateString() === today.toDateString()) label = "Today";
+    else if (d.toDateString() === yesterday.toDateString()) label = "Yesterday";
+    else label = d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+    document.getElementById("dateJumpDisplay").textContent = label;
+    document.getElementById("dateJumpInput").value = toInputDate(d);
+}
+
+function jumpToSelectedDate() {
+    const inputVal = document.getElementById("dateJumpInput").value;
+    if (inputVal) dateJumpDate = new Date(inputVal + "T00:00:00");
+    scrollToDate(dateJumpDate);
+    closeDateJump();
+}
+
+function scrollToDate(targetDate) {
+    const list = document.getElementById("messagesList");
+    const separators = list.querySelectorAll(".date-separator span");
+    const targetLabel = (() => {
+        const today = new Date();
+        const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+        if (targetDate.toDateString() === today.toDateString()) return "Today";
+        if (targetDate.toDateString() === yesterday.toDateString()) return "Yesterday";
+        return targetDate.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    })();
+
+    // Find exact match first
+    for (const sep of separators) {
+        if (sep.textContent.trim() === targetLabel) {
+            sep.closest(".date-separator").scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+        }
+    }
+
+    // No exact match — find closest date separator
+    let closestSep = null;
+    let closestDiff = Infinity;
+    for (const sep of separators) {
+        const text = sep.textContent.trim();
+        if (text === "Today" || text === "Yesterday") continue;
+        const parsed = new Date(text);
+        if (!isNaN(parsed)) {
+            const diff = Math.abs(parsed - targetDate);
+            if (diff < closestDiff) { closestDiff = diff; closestSep = sep; }
+        }
+    }
+    if (closestSep) closestSep.closest(".date-separator").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Middle-click on messagesList opens picker
+document.addEventListener("DOMContentLoaded", function() {
+    const list = document.getElementById("messagesList");
+    if (!list) return;
+
+    list.addEventListener("mousedown", function(e) {
+        if (e.button === 1) { // middle mouse button
+            e.preventDefault();
+            if (dateJumpActive) closeDateJump();
+            else openDateJump();
+        }
+    });
+
+    // Scroll wheel changes date when picker is open
+    document.getElementById("dateJumpOverlay").addEventListener("wheel", function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 1 : -1; // down = newer (+1), up = older (-1)
+        dateJumpDate.setDate(dateJumpDate.getDate() + delta);
+        updateDateJumpDisplay();
+    }, { passive: false });
+
+    // Date input change updates display
+    document.getElementById("dateJumpInput").addEventListener("change", function() {
+        dateJumpDate = new Date(this.value + "T00:00:00");
+        updateDateJumpDisplay();
+    });
+
+    // Enter key in date input triggers jump
+    document.getElementById("dateJumpInput").addEventListener("keypress", function(e) {
+        if (e.key === "Enter") jumpToSelectedDate();
+    });
+
+    // Escape closes picker
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape" && dateJumpActive) closeDateJump();
+    });
+});
