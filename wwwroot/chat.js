@@ -331,11 +331,9 @@ function createPeerConnection(target) {
     peerConnection.ontrack = function(event) {
         const audio = document.getElementById("remoteAudio");
         audio.srcObject = event.streams[0];
-        // Also render in video element if video call
+        audio.play();
         const remoteVideo = document.getElementById("remoteVideo");
         if (remoteVideo) remoteVideo.srcObject = event.streams[0];
-    };
-        audio.play();
     };
     if (localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 }

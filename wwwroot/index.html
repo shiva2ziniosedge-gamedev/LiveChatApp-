@@ -61,7 +61,7 @@
 
         /* Persistent toggle tab on the edge of chat-main */
         .sidebar-toggle-tab {
-            position: absolute; left: -1px; top: 50%; transform: translateY(-50%);
+            position: absolute; left: 0; top: 50%; transform: translateY(-50%);
             width: 20px; height: 48px; background: #fff; border: 1px solid #e8ecef;
             border-left: none; border-radius: 0 8px 8px 0; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
@@ -308,12 +308,12 @@
             <button class="btn-header" onclick="toggleSidebar()" style="border:none;padding:4px 8px;font-size:16px;" id="sidebarCollapseBtn">◀</button>
         </div>
         <div class="users-list" id="usersList"></div>
-        <!-- Always-visible toggle tab on the right edge -->
-        <button class="sidebar-toggle-tab" id="sidebarToggleTab" onclick="toggleSidebar()" title="Toggle panel">◀</button>
     </div>
 
     <!-- Main chat area -->
-    <div class="chat-main">
+    <div class="chat-main" style="position:relative;">
+        <!-- Always-visible toggle tab on the left edge of chat-main -->
+        <button class="sidebar-toggle-tab" id="sidebarToggleTab" onclick="toggleSidebar()" title="Toggle panel">◀</button>
         <div class="chat-header">
             <div class="chat-header-top">
                 <div class="chat-header-title">
