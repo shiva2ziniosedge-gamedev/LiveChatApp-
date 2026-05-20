@@ -295,13 +295,18 @@
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .users-panel { display: none; }
+            .sidebar-toggle-tab { display: none; }
             .btn-mobile-users { display: block; }
-            body { overflow: auto; }
-            .chat-main { height: 100vh; }
-            #messagesList { padding: 12px; }
-            .message-content { max-width: 80%; }
-            .chat-input { padding: 10px 12px; }
+            body { overflow: hidden; }
+            .chat-main { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+            .chat-header { flex-shrink: 0; }
+            #tabChat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+            #messagesList { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+            .chat-input { flex-shrink: 0; padding: 10px 12px; }
+            .message-content { max-width: 85%; }
             input[type="text"] { font-size: 16px; }
+            .chat-tabs { overflow-x: auto; white-space: nowrap; }
+            .chat-tab { padding: 8px 12px; font-size: 12px; }
         }
     </style>
 </head>
@@ -313,7 +318,7 @@
         <div class="sidebar-icon active" title="Chat">💬</div>
         <div class="sidebar-icon" title="Status" onclick="switchChatTab('status', document.querySelectorAll('.chat-tab')[1])">📋</div>
         <div class="sidebar-icon" title="Blockers" onclick="switchChatTab('blockers', document.querySelectorAll('.chat-tab')[2])">🚧</div>
-        <div class="sidebar-icon" title="Inbox" id="sidebarInboxIcon" onclick="switchChatTab('inbox', document.querySelectorAll('.chat-tab')[3])">📩</div>
+        <div class="sidebar-icon" title="Notifications" id="sidebarInboxIcon" onclick="switchChatTab('inbox', document.querySelectorAll('.chat-tab')[3])">🔔</div>
         <div class="sidebar-bottom">
             <div class="sidebar-icon" title="Logout" onclick="firebase.auth().signOut().then(()=> window.location.href='/login.html')">🚪</div>
             <div class="sidebar-avatar" id="sidebarAvatar" title="Profile">?</div>
@@ -324,7 +329,6 @@
     <div class="users-panel" id="sidebar">
         <div class="users-panel-header">
             <h3>Online <span class="online-count" id="userCount">0</span></h3>
-            <button class="btn-header" onclick="toggleSidebar()" style="border:none;padding:4px 8px;font-size:16px;" id="sidebarCollapseBtn">◀</button>
         </div>
         <div class="users-list" id="usersList"></div>
     </div>
@@ -349,7 +353,7 @@
                 <button class="chat-tab active" onclick="switchChatTab('chat', this)">💬 Chat</button>
                 <button class="chat-tab" onclick="switchChatTab('status', this)">📋 Status</button>
                 <button class="chat-tab" onclick="switchChatTab('blockers', this)">🚧 Blockers</button>
-                <button class="chat-tab" onclick="switchChatTab('inbox', this)" id="inboxTab">📩 Inbox</button>
+                <button class="chat-tab" onclick="switchChatTab('inbox', this)" id="inboxTab">🔔 Notifications</button>
             </div>
         </div>
 
@@ -462,11 +466,9 @@
         function toggleSidebar() {
             const panel = document.getElementById("sidebar");
             const tab = document.getElementById("sidebarToggleTab");
-            const btn = document.getElementById("sidebarCollapseBtn");
             panel.classList.toggle("collapsed");
             const collapsed = panel.classList.contains("collapsed");
             if (tab) tab.textContent = collapsed ? "▶" : "◀";
-            if (btn) btn.textContent = collapsed ? "▶" : "◀";
         }
 
         function switchChatTab(name, btn) {
@@ -476,7 +478,7 @@
             if (btn) btn.classList.add("active");
             if (name === "inbox") {
                 const tab = document.getElementById("inboxTab");
-                if (tab) tab.textContent = "📩 Inbox";
+                if (tab) tab.textContent = "🔔 Notifications";
                 const icon = document.getElementById("sidebarInboxIcon");
                 if (icon) { const b = icon.querySelector(".badge"); if (b) b.remove(); }
             }
@@ -604,7 +606,7 @@
                     container.scrollTop = container.scrollHeight;
                     const tab = document.getElementById("inboxTab");
                     if (tab && !tab.classList.contains("active")) {
-                        tab.textContent = "📩 Inbox 🔴";
+                        tab.textContent = "🔔 Notifications 🔴";
                         const icon = document.getElementById("sidebarInboxIcon");
                         if (icon && !icon.querySelector(".badge")) {
                             const b = document.createElement("span"); b.className = "badge"; icon.appendChild(b);

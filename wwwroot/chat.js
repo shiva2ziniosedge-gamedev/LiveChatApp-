@@ -352,7 +352,12 @@ async function initiateCall(target) {
 }
 
 connection.on("IncomingCall", function(caller) { callTarget = caller; showCallOverlay("Incoming Call", caller, true); });
-connection.on("CallAccepted", function() { document.getElementById("callStatus").textContent = "Connected"; document.getElementById("acceptCallBtn").style.display = "none"; });
+connection.on("CallAccepted", function() { 
+    document.getElementById("callStatus").textContent = "Connected"; 
+    document.getElementById("acceptCallBtn").style.display = "none"; 
+    document.getElementById("acceptVideoBtn").style.display = "none";
+    document.getElementById("callActiveActions").style.display = "flex";
+});
 connection.on("CallRejected", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } alert("Call was rejected."); });
 connection.on("CallEnded", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } });
 
@@ -377,6 +382,29 @@ document.getElementById("acceptCallBtn").addEventListener("click", function() {
     connection.invoke("AcceptCall", callTarget);
     document.getElementById("callStatus").textContent = "Connected";
     document.getElementById("acceptCallBtn").style.display = "none";
+    document.getElementById("acceptVideoBtn").style.display = "none";
+});
+
+document.getElementById("acceptVideoBtn").addEventListener("click", async function() {
+    // Accept with video
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        const localVideo = document.getElementById("localVideo");
+        if (localVideo) localVideo.srcObject = localStream;
+        document.getElementById("videoContainer").style.display = "flex";
+        document.getElementById("callActiveActions").style.display = "flex";
+        // Add video tracks to peer connection if it exists
+        if (peerConnection) {
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+        }
+    } catch(e) {
+        console.warn("Video not available, falling back to audio:", e);
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    connection.invoke("AcceptCall", callTarget);
+    document.getElementById("callStatus").textContent = "Connected";
+    document.getElementById("acceptCallBtn").style.display = "none";
+    document.getElementById("acceptVideoBtn").style.display = "none";
 });
 
 document.getElementById("rejectCallBtn").addEventListener("click", function() {
