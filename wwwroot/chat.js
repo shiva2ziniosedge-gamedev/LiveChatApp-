@@ -132,19 +132,28 @@ function updateUsersList(users) {
     usersList.innerHTML = "";
     if (mobileUsersList) mobileUsersList.innerHTML = "";
     users.forEach(function(user) {
+        // Desktop sidebar
         const userDiv = document.createElement("div");
         userDiv.className = "user-item";
         userDiv.innerHTML = `
-            <span class="user-name">${user}</span>
-            ${user !== currentUser ? `<button class="btn-call" onclick="initiateCall('${user}')">📞</button>` : ''}
+            <div class="user-avatar">${user.charAt(0).toUpperCase()}</div>
+            <div class="user-info"><div class="user-name">${user}</div><div class="user-status">online</div></div>
+            ${user !== currentUser ? `
+                <button class="btn-call" title="Voice call" onclick="initiateCall('${user}', false)">📞</button>
+                <button class="btn-call" title="Video call" onclick="initiateCall('${user}', true)" style="margin-left:2px;">📹</button>
+            ` : ''}
         `;
         usersList.appendChild(userDiv);
+        // Mobile overlay
         if (mobileUsersList && user !== currentUser) {
             const mobileDiv = document.createElement("div");
-            mobileDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.08);border-radius:10px;margin-bottom:8px;color:rgba(255,255,255,0.9);font-size:15px;";
+            mobileDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f5f7fa;border-radius:10px;margin-bottom:8px;color:#1e2a35;font-size:15px;";
             mobileDiv.innerHTML = `
-                <span>${user}</span>
-                <button onclick="initiateCall('${user}');document.getElementById('mobileUsersOverlay').style.display='none';" style="background:rgba(0,229,160,0.2);border:1px solid rgba(0,229,160,0.3);color:#00e5a0;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:14px;">📞 Call</button>
+                <span style="font-weight:600;">${user}</span>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="initiateCall('${user}',false);document.getElementById('mobileUsersOverlay').style.display='none';" style="background:#dbeafe;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;">📞</button>
+                    <button onclick="initiateCall('${user}',true);document.getElementById('mobileUsersOverlay').style.display='none';" style="background:#dcfce7;border:1px solid #bbf7d0;color:#16a34a;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;">📹</button>
+                </div>
             `;
             mobileUsersList.appendChild(mobileDiv);
         }
@@ -300,10 +309,9 @@ document.getElementById("imageInput").addEventListener("change", function(e) {
 // ── Voice / Video Calls ──
 let localStream = null;
 let peerConnection = null;
-// Expose on window so index.html video functions can access
-Object.defineProperty(window, 'localStream', { get: () => localStream, set: v => { localStream = v; } });
-Object.defineProperty(window, 'peerConnection', { get: () => peerConnection, set: v => { peerConnection = v; } });
 let callTarget = null;
+let isVideoCall = false;
+let screenStream = null;
 
 const iceServers = {
     iceServers: [
@@ -316,11 +324,35 @@ function showCallOverlay(status, name, showAccept) {
     document.getElementById("callStatus").textContent = status;
     document.getElementById("callName").textContent = name;
     document.getElementById("callOverlay").classList.add("active");
-    document.getElementById("acceptCallBtn").style.display = showAccept ? "block" : "none";
+    document.getElementById("acceptCallBtn").style.display = showAccept ? "inline-flex" : "none";
+    document.getElementById("acceptVideoBtn").style.display = showAccept ? "inline-flex" : "none";
+    document.getElementById("callActiveActions").style.display = "none";
+    document.getElementById("videoContainer").style.display = "none";
 }
 
 function hideCallOverlay() {
     document.getElementById("callOverlay").classList.remove("active");
+    document.getElementById("callActiveActions").style.display = "none";
+    document.getElementById("videoContainer").style.display = "none";
+    // Stop screen share if active
+    stopScreenShare();
+}
+
+function stopScreenShare() {
+    if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+        screenStream = null;
+        const btn = document.getElementById("toggleScreenBtn");
+        if (btn) { btn.textContent = "🖥️ Share Screen"; btn.style.background = "#f5f7fa"; }
+    }
+}
+
+function cleanupCall() {
+    stopScreenShare();
+    if (peerConnection) { peerConnection.close(); peerConnection = null; }
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    isVideoCall = false;
+    callTarget = null;
 }
 
 function createPeerConnection(target) {
@@ -329,40 +361,95 @@ function createPeerConnection(target) {
         if (event.candidate) connection.invoke("SendIceCandidate", target, JSON.stringify(event.candidate));
     };
     peerConnection.ontrack = function(event) {
+        const stream = event.streams[0];
         const audio = document.getElementById("remoteAudio");
-        audio.srcObject = event.streams[0];
-        audio.play();
+        audio.srcObject = stream;
+        audio.play().catch(() => {});
+        // Show remote video if stream has video tracks
         const remoteVideo = document.getElementById("remoteVideo");
-        if (remoteVideo) remoteVideo.srcObject = event.streams[0];
+        if (remoteVideo && stream.getVideoTracks().length > 0) {
+            remoteVideo.srcObject = stream;
+            document.getElementById("videoContainer").style.display = "flex";
+        }
+    };
+    // Handle renegotiation (needed for screen share track replacement)
+    peerConnection.onnegotiationneeded = async function() {
+        if (!peerConnection || peerConnection.signalingState !== "stable") return;
+        try {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            connection.invoke("SendOffer", callTarget, JSON.stringify(offer));
+        } catch(e) { console.warn("Renegotiation failed:", e); }
     };
     if (localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 }
 
-async function initiateCall(target) {
+async function initiateCall(target, withVideo) {
     if (!currentUser) return;
     if (target === currentUser) return;
     callTarget = target;
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    isVideoCall = !!withVideo;
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: !!withVideo });
+    } catch(e) {
+        alert("Could not access microphone" + (withVideo ? "/camera" : "") + ". Please check permissions.");
+        return;
+    }
+    if (withVideo) {
+        const localVideo = document.getElementById("localVideo");
+        if (localVideo) localVideo.srcObject = localStream;
+        document.getElementById("videoContainer").style.display = "flex";
+    }
     createPeerConnection(target);
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     connection.invoke("SendOffer", target, JSON.stringify(offer));
     connection.invoke("CallUser", currentUser, target);
     showCallOverlay("Calling...", target, false);
+    document.getElementById("callActiveActions").style.display = "flex";
 }
 
-connection.on("IncomingCall", function(caller) { callTarget = caller; showCallOverlay("Incoming Call", caller, true); });
-connection.on("CallAccepted", function() { 
-    document.getElementById("callStatus").textContent = "Connected"; 
-    document.getElementById("acceptCallBtn").style.display = "none"; 
+connection.on("IncomingCall", function(caller) {
+    callTarget = caller;
+    showCallOverlay("Incoming Call", caller, true);
+});
+
+connection.on("CallAccepted", function() {
+    document.getElementById("callStatus").textContent = "Connected";
+    document.getElementById("acceptCallBtn").style.display = "none";
     document.getElementById("acceptVideoBtn").style.display = "none";
     document.getElementById("callActiveActions").style.display = "flex";
 });
-connection.on("CallRejected", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } alert("Call was rejected."); });
-connection.on("CallEnded", function() { hideCallOverlay(); if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } });
+
+connection.on("CallRejected", function() {
+    hideCallOverlay();
+    cleanupCall();
+    alert("Call was rejected.");
+});
+
+connection.on("CallEnded", function() {
+    hideCallOverlay();
+    cleanupCall();
+});
 
 connection.on("ReceiveOffer", async function(offerJson) {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    // If already in a call, handle renegotiation (e.g. screen share)
+    if (peerConnection && peerConnection.signalingState !== "closed") {
+        try {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerJson)));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            connection.invoke("SendAnswer", callTarget, JSON.stringify(answer));
+        } catch(e) { console.warn("Renegotiation receive failed:", e); }
+        return;
+    }
+    // New call offer
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch(e) {
+        console.warn("Could not get media:", e);
+        return;
+    }
     createPeerConnection(callTarget);
     await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerJson)));
     const answer = await peerConnection.createAnswer();
@@ -371,18 +458,27 @@ connection.on("ReceiveOffer", async function(offerJson) {
 });
 
 connection.on("ReceiveAnswer", async function(answerJson) {
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answerJson)));
+    if (peerConnection) await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answerJson)));
 });
 
 connection.on("ReceiveIceCandidate", async function(candidateJson) {
-    if (peerConnection) await peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidateJson)));
+    if (peerConnection) {
+        try { await peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidateJson))); }
+        catch(e) { console.warn("ICE candidate error:", e); }
+    }
 });
 
-document.getElementById("acceptCallBtn").addEventListener("click", function() {
+document.getElementById("acceptCallBtn").addEventListener("click", async function() {
+    // Accept audio only
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch(e) { alert("Could not access microphone."); return; }
+    createPeerConnection(callTarget);
     connection.invoke("AcceptCall", callTarget);
     document.getElementById("callStatus").textContent = "Connected";
     document.getElementById("acceptCallBtn").style.display = "none";
     document.getElementById("acceptVideoBtn").style.display = "none";
+    document.getElementById("callActiveActions").style.display = "flex";
 });
 
 document.getElementById("acceptVideoBtn").addEventListener("click", async function() {
@@ -392,32 +488,33 @@ document.getElementById("acceptVideoBtn").addEventListener("click", async functi
         const localVideo = document.getElementById("localVideo");
         if (localVideo) localVideo.srcObject = localStream;
         document.getElementById("videoContainer").style.display = "flex";
-        document.getElementById("callActiveActions").style.display = "flex";
-        // Add video tracks to peer connection if it exists
-        if (peerConnection) {
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-        }
     } catch(e) {
-        console.warn("Video not available, falling back to audio:", e);
+        console.warn("Camera not available, falling back to audio:", e);
         localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
+    createPeerConnection(callTarget);
     connection.invoke("AcceptCall", callTarget);
     document.getElementById("callStatus").textContent = "Connected";
     document.getElementById("acceptCallBtn").style.display = "none";
     document.getElementById("acceptVideoBtn").style.display = "none";
+    document.getElementById("callActiveActions").style.display = "flex";
 });
 
 document.getElementById("rejectCallBtn").addEventListener("click", function() {
     connection.invoke("EndCall", callTarget);
     hideCallOverlay();
-    if (peerConnection) { peerConnection.close(); peerConnection = null; }
-    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-    callTarget = null;
+    cleanupCall();
 });
 
 document.getElementById("mobileCallBtn").addEventListener("click", function() {
     document.getElementById("mobileUsersOverlay").style.display = "flex";
 });
+
+// ── Screen share (in index.html toggleScreenShare uses these) ──
+window._getScreenStream = function() { return screenStream; };
+window._setScreenStream = function(s) { screenStream = s; };
+window._getPeerConnection = function() { return peerConnection; };
+window._getLocalStream = function() { return localStream; };
 
 // ── Date Jump Picker (middle-click on chat) ──
 let dateJumpActive = false;

@@ -697,36 +697,47 @@
 
         async function toggleScreenShare() {
             const btn = document.getElementById("toggleScreenBtn");
-            if (screenStream) {
-                // Stop screen share, revert to camera
-                screenStream.getTracks().forEach(t => t.stop());
-                screenStream = null;
+            const pc = window._getPeerConnection ? window._getPeerConnection() : null;
+            let ss = window._getScreenStream ? window._getScreenStream() : null;
+            if (ss) {
+                // Stop screen share
+                ss.getTracks().forEach(t => t.stop());
+                window._setScreenStream(null);
                 btn.textContent = "🖥️ Share Screen";
                 btn.style.background = "#f5f7fa";
-                if (window.peerConnection && window.localStream) {
-                    const videoTrack = window.localStream.getVideoTracks()[0];
+                // Revert to camera if available
+                const ls = window._getLocalStream ? window._getLocalStream() : null;
+                if (pc && ls) {
+                    const videoTrack = ls.getVideoTracks()[0];
                     if (videoTrack) {
-                        const sender = window.peerConnection.getSenders().find(s => s.track && s.track.kind === "video");
+                        const sender = pc.getSenders().find(s => s.track && s.track.kind === "video");
                         if (sender) sender.replaceTrack(videoTrack);
                     }
                 }
             } else {
                 try {
-                    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    const newScreenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                    window._setScreenStream(newScreenStream);
                     btn.textContent = "⏹ Stop Share";
                     btn.style.background = "#fee2e2";
-                    const screenTrack = screenStream.getVideoTracks()[0];
-                    if (window.peerConnection) {
-                        const sender = window.peerConnection.getSenders().find(s => s.track && s.track.kind === "video");
-                        if (sender) sender.replaceTrack(screenTrack);
-                    }
-                    // Show local screen preview
+                    const screenTrack = newScreenStream.getVideoTracks()[0];
+                    // Show local preview
                     const localVideo = document.getElementById("localVideo");
-                    if (localVideo) localVideo.srcObject = screenStream;
-                    // Auto-stop when user ends share via browser UI
+                    if (localVideo) { localVideo.srcObject = newScreenStream; document.getElementById("videoContainer").style.display = "flex"; }
+                    // Replace video track in peer connection
+                    if (pc) {
+                        const sender = pc.getSenders().find(s => s.track && s.track.kind === "video");
+                        if (sender) {
+                            await sender.replaceTrack(screenTrack);
+                        } else {
+                            // No video sender yet — add the track (triggers renegotiation via onnegotiationneeded)
+                            pc.addTrack(screenTrack, newScreenStream);
+                        }
+                    }
+                    // Auto-stop when user ends via browser UI
                     screenTrack.onended = () => toggleScreenShare();
                 } catch(e) {
-                    console.warn("Screen share cancelled or denied");
+                    console.warn("Screen share cancelled or denied:", e);
                 }
             }
         }
