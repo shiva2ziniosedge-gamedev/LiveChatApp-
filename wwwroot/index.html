@@ -683,12 +683,10 @@
         window.notifyUnread = notifyUnread;
 
         // ── Video call & screen share ──
-        let isVideoCall = false;
-        let screenStream = null;
-
         function toggleVideo() {
-            if (!window.localStream) return;
-            const videoTrack = window.localStream.getVideoTracks()[0];
+            const ls = window._getLocalStream ? window._getLocalStream() : null;
+            if (!ls) return;
+            const videoTrack = ls.getVideoTracks()[0];
             if (videoTrack) {
                 videoTrack.enabled = !videoTrack.enabled;
                 document.getElementById("toggleVideoBtn").textContent = videoTrack.enabled ? "📹 Video" : "📷 Video Off";
@@ -742,17 +740,7 @@
             }
         }
 
-        // Expose for video call accept
-        window.acceptVideoCall = async function() {
-            isVideoCall = true;
-            document.getElementById("videoContainer").style.display = "flex";
-            document.getElementById("callActiveActions").style.display = "flex";
-            // Get video+audio stream
-            window.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-            const localVideo = document.getElementById("localVideo");
-            if (localVideo) localVideo.srcObject = window.localStream;
-            document.getElementById("acceptCallBtn").click(); // reuse existing accept logic
-        };
+        // acceptVideoCall is now handled directly in chat.js acceptVideoBtn click handler
 
     </script>
     <!-- Date Jump Picker -->
