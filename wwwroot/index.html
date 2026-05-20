@@ -284,11 +284,22 @@
         @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(33,150,166,0.3); } 50% { box-shadow: 0 0 0 15px rgba(33,150,166,0); } }
         .call-status { color: #7f8c8d; font-size: 13px; margin-bottom: 6px; }
         .call-name { color: #1e2a35; font-size: 22px; font-weight: 700; margin-bottom: 30px; }
-        .call-actions { display: flex; gap: 20px; justify-content: center; }
-        .btn-accept { width: 56px; height: 56px; background: #00c853; border: none; border-radius: 50%; cursor: pointer; font-size: 22px; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(0,200,83,0.4); }
+        .call-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .btn-accept { 
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            width: 64px; height: 64px; background: #00c853; border: none; border-radius: 50%; 
+            cursor: pointer; font-size: 22px; transition: transform 0.2s; 
+            box-shadow: 0 4px 15px rgba(0,200,83,0.4); 
+        }
         .btn-accept:hover { transform: scale(1.1); }
-        .btn-reject, .btn-end { width: 56px; height: 56px; background: #ef4444; border: none; border-radius: 50%; cursor: pointer; font-size: 22px; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(239,68,68,0.4); }
+        .btn-reject, .btn-end { 
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            width: 64px; height: 64px; background: #ef4444; border: none; border-radius: 50%; 
+            cursor: pointer; font-size: 22px; transition: transform 0.2s; 
+            box-shadow: 0 4px 15px rgba(239,68,68,0.4); 
+        }
         .btn-reject:hover, .btn-end:hover { transform: scale(1.1); }
+        .call-btn-label { font-size: 10px; font-weight: 700; color: white; margin-top: 2px; }
 
         /* ── Mobile ── */
         .btn-mobile-users { display: none; background: rgba(33,150,166,0.1); border: 1px solid rgba(33,150,166,0.3); color: #2196a6; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; font-weight: 600; }
@@ -421,9 +432,15 @@
             <div class="call-status" id="callStatus">Incoming Call</div>
             <div class="call-name" id="callName">Unknown</div>
             <div class="call-actions">
-                <button class="btn-accept" id="acceptCallBtn" title="Accept Audio">📞</button>
-                <button class="btn-accept" id="acceptVideoBtn" title="Accept Video" style="background:#1565c0;box-shadow:0 4px 15px rgba(21,101,192,0.4);">📹</button>
-                <button class="btn-reject" id="rejectCallBtn" title="Reject">📵</button>
+                <button class="btn-accept" id="acceptCallBtn" title="Accept Audio">
+                    📞<span class="call-btn-label">Audio</span>
+                </button>
+                <button class="btn-accept" id="acceptVideoBtn" title="Accept Video" style="background:#1565c0;box-shadow:0 4px 15px rgba(21,101,192,0.4);">
+                    📹<span class="call-btn-label">Video</span>
+                </button>
+                <button class="btn-reject" id="rejectCallBtn" title="Reject">
+                    📵<span class="call-btn-label">Decline</span>
+                </button>
             </div>
             <div id="callActiveActions" style="display:none;margin-top:16px;display:none;gap:10px;justify-content:center;flex-wrap:wrap;">
                 <button id="toggleVideoBtn" onclick="toggleVideo()" style="background:#f5f7fa;border:1px solid #e8ecef;color:#374151;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;">📹 Video</button>
